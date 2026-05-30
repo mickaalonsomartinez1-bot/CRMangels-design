@@ -201,6 +201,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="ni" data-page="compras"><i class="ti ti-truck"></i>Compras</div>
     <div class="ns">Inventario</div>
     <div class="ni" data-page="filamentos"><i class="ti ti-line-dashed"></i>Filamentos</div>
+    <div class="ni" data-page="catalogo"><i class="ti ti-tags"></i>Catalogo</div>
     <div class="ni" data-page="galeria"><i class="ti ti-photo"></i>Galeria</div>
     <div class="ns">Sistema</div>
     <div class="ni" data-page="reportes"><i class="ti ti-chart-bar"></i>Reportes</div>
@@ -345,12 +346,18 @@ textarea.fi{resize:vertical;min-height:68px;}
                 <input class="fi" id="pe-wsp" placeholder="549351XXXXXXX" style="flex:1;">
                 <button class="btn btn-wsp" onclick="enviarWsp()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Enviar WhatsApp
+                  Solo texto
                 </button>
               </div>
               <div style="font-size:11px;color:var(--mu);margin-top:5px;">Codigo de pais + numero sin espacios. Ej: 549351XXXXXXX</div>
               <div style="height:1px;background:var(--bor);margin:12px 0;"></div>
-              <button class="btn" style="width:100%;" onclick="imprimirPres()"><i class="ti ti-printer"></i>Imprimir / Guardar PDF</button>
+              <div style="display:flex;gap:8px;">
+                <button class="btn" style="flex:1;" onclick="imprimirPres()"><i class="ti ti-printer"></i>Ver / Imprimir PDF</button>
+                <button class="btn btn-wsp" style="flex:1;" onclick="enviarWspConPDF()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  WSP + detalle
+                </button>
+              </div>
             </div>
           </div>
           <div>
@@ -398,7 +405,11 @@ textarea.fi{resize:vertical;min-height:68px;}
           <div class="card mb16">
             <div class="sec-title mb16">Margen y precio</div>
             <div class="frow">
-              <div class="fg"><label class="fl">Margen (%)</label><input type="number" class="fi" id="c-margen" placeholder="40" oninput="calcular()"></div>
+              <div class="fg">
+                <label class="fl">Multiplicador (x)</label>
+                <input type="number" class="fi" id="c-margen" placeholder="3" step="0.1" min="1" oninput="calcular()">
+                <div style="font-size:11px;color:var(--mu);margin-top:4px;">Ej: 3 = costo x3 &nbsp;|&nbsp; 2.5 = costo x2.5</div>
+              </div>
               <div class="fg"><label class="fl">IVA (%)</label><input type="number" class="fi" id="c-iva" placeholder="0" oninput="calcular()"></div>
             </div>
           </div>
@@ -411,13 +422,16 @@ textarea.fi{resize:vertical;min-height:68px;}
             <div class="rrow"><span class="rl">Otros costos</span><span class="rv" id="rc-o">$0</span></div>
             <div class="rrow"><span class="rl">Costo total unitario</span><span class="rv" id="rc-t">$0</span></div>
             <div style="height:1px;background:rgba(255,255,255,0.1);margin:7px 0;"></div>
-            <div class="rrow"><span class="rl">Precio de venta</span><span class="rv rv-big" id="rc-p">$0</span></div>
+            <div class="rrow"><span class="rl">Precio de venta (x<span id="rc-mult">1</span>)</span><span class="rv rv-big" id="rc-p">$0</span></div>
             <div class="rrow"><span class="rl">Con IVA</span><span class="rv" id="rc-i">$0</span></div>
             <div class="rrow"><span class="rl">Ganancia unitaria</span><span class="rv rv-gr" id="rc-gu">$0</span></div>
             <div class="rrow"><span class="rl">Ganancia total (x<span id="rc-ql">1</span>)</span><span class="rv rv-gr" id="rc-gt">$0</span></div>
           </div>
           <div class="card">
-            <div class="sec-title mb16">Historial guardado</div>
+            <div class="flex-between mb16">
+              <div class="sec-title">Historial guardado</div>
+              <button class="btn btn-sm btn-danger" onclick="borrarHistorial()"><i class="ti ti-trash"></i>Borrar todo</button>
+            </div>
             <div id="calc-hist"><div style="font-size:13px;color:var(--mu);">Sin calculos guardados.</div></div>
           </div>
         </div>
@@ -452,6 +466,20 @@ textarea.fi{resize:vertical;min-height:68px;}
         </div>
       </div>
       <div id="fil-list"><div class="loading"><i class="ti ti-loader"></i></div></div>
+    </div>
+
+    <!-- CATALOGO -->
+    <div class="page" id="page-catalogo">
+      <div class="flex-between mb16">
+        <div id="cat-cnt" style="font-size:13px;color:var(--mu);">Cargando...</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('m-producto')"><i class="ti ti-plus"></i>Nuevo producto</button>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th>Codigo</th><th>Nombre</th><th>Descripcion</th><th>Precio venta</th><th>Costo</th><th>Categoria</th><th></th></tr></thead>
+          <tbody id="cat-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- GALERIA -->
@@ -623,6 +651,40 @@ textarea.fi{resize:vertical;min-height:68px;}
   </div>
 </div>
 
+<div class="overlay" id="m-producto">
+  <div class="modal">
+    <div class="mh"><div class="mt">Nuevo producto / codigo</div><button class="mc" onclick="closeModal('m-producto')"><i class="ti ti-x"></i></button></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Codigo</label><input class="fi" id="mp2-cod" placeholder="Ej: L276, ECO-001..."></div>
+      <div class="fg"><label class="fl">Categoria</label>
+        <select class="fi" id="mp2-cat">
+          <option value="topper">Topper</option>
+          <option value="figura">Figura</option>
+          <option value="letra">Letra</option>
+          <option value="souvenir">Souvenir</option>
+          <option value="personalizado">Personalizado</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Nombre del producto</label><input class="fi" id="mp2-nom" placeholder="Ej: Topper Messi, Letra A grande..."></div>
+    <div class="fg"><label class="fl">Descripcion</label><textarea class="fi" id="mp2-desc" rows="2" placeholder="Medidas, colores, variantes..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Precio de venta ($)</label><input type="number" class="fi" id="mp2-precio" placeholder="0"></div>
+      <div class="fg"><label class="fl">Costo de produccion ($)</label><input type="number" class="fi" id="mp2-costo" placeholder="0"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Gramos de filamento</label><input type="number" class="fi" id="mp2-grm" placeholder="0"></div>
+      <div class="fg"><label class="fl">Tiempo impresion (min)</label><input type="number" class="fi" id="mp2-tiempo" placeholder="0"></div>
+    </div>
+    <div class="fg"><label class="fl">Notas</label><input class="fi" id="mp2-notas" placeholder="Info adicional..."></div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('m-producto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProducto()"><i class="ti ti-check"></i>Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"><i class="ti ti-check" id="ti"></i><span id="tm"></span></div>
 
 <script>
@@ -675,6 +737,7 @@ var pageMeta = {
   calculadora: ['Calculadora 3D', 'Calcular costos de impresion'],
   compras: ['Compras', 'Compras a proveedores'],
   filamentos: ['Filamentos', 'Stock de materia prima'],
+  catalogo: ['Catalogo de productos', 'Codigos y precios de tus productos'],
   galeria: ['Galeria', 'Imagenes de productos'],
   reportes: ['Reportes', 'Analisis del negocio'],
   config: ['Configuracion', 'Conexion y ajustes']
@@ -710,6 +773,7 @@ async function loadPage(id) {
   else if (id === 'presupuestos') await loadPresupuestos();
   else if (id === 'compras') await loadCompras();
   else if (id === 'filamentos') await loadFilamentos();
+  else if (id === 'catalogo') await loadCatalogo();
   else if (id === 'galeria') await loadGaleria();
   else if (id === 'reportes') await loadReportes();
   else if (id === 'calculadora') loadCalcHist();
@@ -834,9 +898,10 @@ async function avanzarPed(id, actual) {
 
 async function delPed(id) {
   if (!confirm('Eliminar este pedido?')) return;
-  await sb.from('pedidos').delete().eq('id', id);
+  var r = await sb.from('pedidos').delete().eq('id', id);
+  if (r.error) { toast('Error al eliminar: ' + r.error.message, 'err'); return; }
   toast('Pedido eliminado');
-  loadPedidos();
+  await loadPedidos();
 }
 
 async function loadClientes() {
@@ -1030,19 +1095,20 @@ function calcular() {
   var elec = parseFloat(document.getElementById('c-elec').value) || 0;
   var fallo = parseFloat(document.getElementById('c-fallo').value) || 0;
   var otros = parseFloat(document.getElementById('c-otros').value) || 0;
-  var margen = parseFloat(document.getElementById('c-margen').value) || 40;
+  var mult = parseFloat(document.getElementById('c-margen').value) || 1;
   var iva = parseFloat(document.getElementById('c-iva').value) || 0;
   var qty = parseFloat(document.getElementById('c-qty').value) || 1;
   var costFil = (pkg / 1000) * grm;
   document.getElementById('c-filcalc').value = money(costFil);
   var falloAmt = costFil * (fallo / 100);
   var costoTotal = costFil + falloAmt + elec + otros;
-  var precio = margen >= 100 ? costoTotal : costoTotal / (1 - margen / 100);
+  var precio = costoTotal * mult;
   var conIva = precio * (1 + iva / 100);
   var ganU = precio - costoTotal;
   document.getElementById('rc-f').textContent = money(costFil);
   document.getElementById('rc-o').textContent = money(elec + otros + falloAmt);
   document.getElementById('rc-t').textContent = money(costoTotal);
+  document.getElementById('rc-mult').textContent = mult;
   document.getElementById('rc-p').textContent = money(precio);
   document.getElementById('rc-i').textContent = money(conIva);
   document.getElementById('rc-gu').textContent = money(ganU);
@@ -1061,13 +1127,13 @@ async function guardarCalc() {
   var elec = parseFloat(document.getElementById('c-elec').value) || 0;
   var otros = parseFloat(document.getElementById('c-otros').value) || 0;
   var fallo = parseFloat(document.getElementById('c-fallo').value) || 0;
-  var margen = parseFloat(document.getElementById('c-margen').value) || 40;
+  var mult = parseFloat(document.getElementById('c-margen').value) || 1;
   var iva = parseFloat(document.getElementById('c-iva').value) || 0;
   var qty = parseInt(document.getElementById('c-qty').value) || 1;
   var falloAmt = costFil * (fallo / 100);
   var costoTotal = costFil + falloAmt + elec + otros;
-  var precio = margen >= 100 ? costoTotal : costoTotal / (1 - margen / 100);
-  var r = await sb.from('calculos').insert({nombre: nombre, costo_filamento: costFil, costo_electricidad: elec, costo_fallo: falloAmt, otros_costos: otros, costo_total: costoTotal, margen_pct: margen, precio_venta: precio, iva_pct: iva, precio_con_iva: precio * (1 + iva / 100), ganancia_unitaria: precio - costoTotal, cantidad: qty, gramos_usados: grm, precio_por_kg: pkg});
+  var precio = costoTotal * mult;
+  var r = await sb.from('calculos').insert({nombre: nombre, costo_filamento: costFil, costo_electricidad: elec, costo_fallo: falloAmt, otros_costos: otros, costo_total: costoTotal, margen_pct: mult, precio_venta: precio, iva_pct: iva, precio_con_iva: precio * (1 + iva / 100), ganancia_unitaria: precio - costoTotal, cantidad: qty, gramos_usados: grm, precio_por_kg: pkg});
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
   toast('Calculo guardado');
   loadCalcHist();
@@ -1075,16 +1141,35 @@ async function guardarCalc() {
 
 async function loadCalcHist() {
   if (!sb) return;
-  var r = await sb.from('calculos').select('*').order('created_at', {ascending: false}).limit(8);
+  var r = await sb.from('calculos').select('*').order('created_at', {ascending: false}).limit(20);
   var el = document.getElementById('calc-hist');
   if (!r.data || !r.data.length) { el.innerHTML = '<div style="font-size:13px;color:var(--mu);">Sin calculos guardados.</div>'; return; }
   el.innerHTML = r.data.map(function(c) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bor);">' +
       '<div><div style="font-weight:500;font-size:13px;">' + c.nombre + '</div>' +
-      '<div style="font-size:11px;color:var(--mu);">' + new Date(c.created_at).toLocaleDateString('es-AR') + ' - ' + c.gramos_usados + 'g - margen ' + c.margen_pct + '%</div></div>' +
-      '<div style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(c.precio_venta) + '</div>' +
+      '<div style="font-size:11px;color:var(--mu);">' + new Date(c.created_at).toLocaleDateString('es-AR') + ' - ' + (c.gramos_usados || 0) + 'g - x' + (c.margen_pct || 1) + '</div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<div style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(c.precio_venta) + '</div>' +
+        '<button class="btn btn-sm btn-danger" onclick="delCalculo(\'' + c.id + '\')" style="padding:3px 7px;"><i class="ti ti-x"></i></button>' +
+      '</div>' +
       '</div>';
   }).join('');
+}
+
+async function borrarHistorial() {
+  if (!confirm('Borrar TODO el historial de calculos?')) return;
+  var r = await sb.from('calculos').select('id');
+  if (r.data && r.data.length) {
+    await sb.from('calculos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  }
+  toast('Historial borrado');
+  loadCalcHist();
+}
+
+async function delCalculo(id) {
+  await sb.from('calculos').delete().eq('id', id);
+  toast('Eliminado');
+  loadCalcHist();
 }
 
 async function loadPresupuestos(filter) {
@@ -1347,15 +1432,55 @@ function wspRapido(tel, nombre, total, asunto, num) {
 
 function imprimirPres() {
   renderPreview();
-  var content = document.getElementById('print-content');
-  if (!content) { toast('Genera el presupuesto primero', 'err'); return; }
-  var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Presupuesto - Angels Design</title>' +
-    '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">' +
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:\'DM Sans\',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}@page{size:A4;margin:0;}</style>' +
-    '</head><body>' + content.outerHTML + '</body></html>');
-  w.document.close();
-  setTimeout(function() { w.focus(); w.print(); }, 600);
+  setTimeout(function() {
+    var content = document.getElementById('print-content');
+    if (!content) { toast('Genera el presupuesto primero', 'err'); return; }
+    var w = window.open('', '_blank');
+    if (!w) { toast('Permite ventanas emergentes en tu navegador', 'err'); return; }
+    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Presupuesto - Angels Design</title>' +
+      '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">' +
+      '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:\'DM Sans\',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+      '@page{size:A4;margin:10mm;}' +
+      '@media print{.no-print{display:none!important;}}' +
+      '.print-btn{position:fixed;top:15px;right:15px;background:#1a6ef5;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:sans-serif;z-index:999;}' +
+      '</style>' +
+      '</head><body>' +
+      '<button class="print-btn no-print" onclick="window.print()">Imprimir / Guardar PDF</button>' +
+      content.outerHTML +
+      '</body></html>');
+    w.document.close();
+  }, 200);
+}
+
+function enviarWspConPDF() {
+  renderPreview();
+  var tel = document.getElementById('pe-wsp').value.replace(/\D/g,'');
+  if (!tel) { toast('Ingresa el telefono primero', 'err'); return; }
+  var sel = document.getElementById('pe-cli');
+  var nombre = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+  var t = calcTotals();
+  var asunto = document.getElementById('pe-asunto').value || 'Presupuesto';
+  var notas = document.getElementById('pe-notas').value || '';
+  var validez = document.getElementById('pe-val').value || 15;
+  var items = presItems.filter(function(it) { return it.desc || it.precio; });
+  var msg = 'Hola ' + nombre + '!\n\n';
+  msg += 'Te enviamos el presupuesto de *Angels Design*.\n\n';
+  msg += '*' + asunto + '*\n\n';
+  if (items.length) {
+    msg += '*Detalle:*\n';
+    items.forEach(function(it) {
+      msg += '- ' + (it.codigo ? '[' + it.codigo + '] ' : '') + it.desc + ': ' + it.qty + 'u x ' + money(it.precio) + ' = *' + money((it.qty || 1) * (it.precio || 0)) + '*\n';
+    });
+    msg += '\n';
+  }
+  if (t.descAmt > 0) msg += 'Descuento (' + t.desc + '%): -' + money(t.descAmt) + '\n';
+  if (t.ivaAmt > 0) msg += 'IVA (' + t.iva + '%): ' + money(t.ivaAmt) + '\n';
+  msg += '\n*TOTAL: ' + money(t.total) + '*\n\n';
+  if (notas) msg += notas + '\n\n';
+  msg += 'Valido por ' + validez + ' dias.\n';
+  msg += 'Para ver el PDF completo pedinos por este medio.\n';
+  msg += 'Cualquier consulta estamos disponibles!';
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 async function loadGaleria() {
@@ -1418,6 +1543,62 @@ async function loadReportes() {
       '<div style="flex:1;font-size:13px;">' + f.color + ' <span style="font-size:11px;color:var(--mu);">' + f.material + '</span></div>' +
       '<div style="font-family:var(--fh);font-weight:700;font-size:13px;color:' + col + ';">' + (f.gramos_disponibles || 0) + 'g</div></div>';
   }).join('') || '<div class="empty"><i class="ti ti-line-dashed"></i><p>Sin filamentos</p></div>';
+}
+
+async function loadCatalogo() {
+  var r = await sb.from('catalogo').select('*').order('codigo');
+  var list = r.data || [];
+  document.getElementById('cat-cnt').textContent = list.length + ' productos en catalogo';
+  var tbody = document.getElementById('cat-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="ti ti-tags"></i><p>Sin productos aun. Agrega tu primer codigo!</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(function(p) {
+    var ganancia = (p.precio_venta || 0) - (p.costo || 0);
+    var ganCol = ganancia >= 0 ? 'color:var(--ok);' : 'color:var(--er);';
+    return '<tr>' +
+      '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + (p.codigo || '-') + '</span></td>' +
+      '<td style="font-weight:500;">' + (p.nombre || '-') + '</td>' +
+      '<td style="color:var(--mu);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.descripcion || '-') + '</td>' +
+      '<td><span style="font-family:var(--fh);font-weight:700;">' + money(p.precio_venta) + '</span></td>' +
+      '<td style="color:var(--mu);">' + money(p.costo) + '</td>' +
+      '<td><span class="badge b-bl">' + (p.categoria || '-') + '</span></td>' +
+      '<td><div class="tda">' +
+        '<button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button>' +
+      '</div></td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function saveProducto() {
+  if (!sb) { toast('Sin conexion', 'err'); return; }
+  var cod = document.getElementById('mp2-cod').value.trim();
+  var nom = document.getElementById('mp2-nom').value.trim();
+  if (!nom) { toast('Ingresa el nombre del producto', 'err'); return; }
+  var r = await sb.from('catalogo').insert({
+    codigo: cod,
+    nombre: nom,
+    descripcion: document.getElementById('mp2-desc').value,
+    categoria: document.getElementById('mp2-cat').value,
+    precio_venta: parseFloat(document.getElementById('mp2-precio').value) || 0,
+    costo: parseFloat(document.getElementById('mp2-costo').value) || 0,
+    gramos_filamento: parseFloat(document.getElementById('mp2-grm').value) || 0,
+    tiempo_impresion: parseFloat(document.getElementById('mp2-tiempo').value) || 0,
+    notas: document.getElementById('mp2-notas').value
+  });
+  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  toast('Producto guardado');
+  closeModal('m-producto');
+  ['mp2-cod','mp2-nom','mp2-desc','mp2-precio','mp2-costo','mp2-grm','mp2-tiempo','mp2-notas'].forEach(function(id) { document.getElementById(id).value = ''; });
+  await loadCatalogo();
+}
+
+async function delProducto(id) {
+  if (!confirm('Eliminar este producto?')) return;
+  await sb.from('catalogo').delete().eq('id', id);
+  toast('Eliminado');
+  loadCatalogo();
 }
 
 function loadConfig() {
