@@ -948,13 +948,15 @@ async function loadPedidos(filter) {
 function renderPedidos(filter) {
   var list = filter === 'all' ? Pedidos : Pedidos.filter(function(p) { return p.estado === filter; });
   var tbody = document.getElementById('ped-body');
+  var hoyStr = new Date().toISOString().slice(0,10);
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(function(p) {
-    return '<tr>' +
-      '<td><span style="font-family:var(--fh);font-weight:700;">#' + p.numero + '</span></td>' +
+    var esHoy = p.fecha_entrega === hoyStr && p.estado !== 'entregado';
+    return '<tr style="' + (esHoy ? 'background:#fffbeb;' : '') + '">' +
+      '<td style="font-size:12px;color:var(--mu);">' + new Date(p.created_at).toLocaleDateString('es-AR') + (esHoy ? ' <span style="font-size:10px;background:#f59e0b;color:#fff;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px;">HOY</span>' : '') + '</td>' +
       '<td style="font-weight:500;">' + ((p.clientes && p.clientes.nombre) || '-') + '</td>' +
       '<td style="color:var(--mu);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.notas || '-') + '</td>' +
       '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(p.total) + '</span></td>' +
@@ -1035,14 +1037,17 @@ async function savePedido() {
     toast('Stock insuficiente para este pedido', 'err'); return;
   }
   var desc = document.getElementById('mp-desc').value;
+  var notas = document.getElementById('mp-notas').value;
   if (mpItems.length > 0) {
     desc = mpItems.map(function(it) { return (it.codigo ? '['+it.codigo+'] ' : '') + it.nombre + ' x' + it.qty; }).join(', ');
   }
+  // Combinar descripcion y notas
+  var notasFinal = desc + (notas ? '\n' + notas : '');
   var r = await sb.from('pedidos').insert({
     cliente_id: cli,
     estado: document.getElementById('mp-est').value,
     fecha_entrega: document.getElementById('mp-fecha').value || null,
-    notas: desc,
+    notas: notasFinal,
     total: parseFloat(document.getElementById('mp-total').value) || 0
   }).select().single();
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
