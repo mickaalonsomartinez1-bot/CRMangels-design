@@ -1139,7 +1139,7 @@ function generarFactura(p) {
     // HEADER
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">' +
       '<div>' +
-        '<img src="' + LOGO_IMG + '" style="height:85px;width:auto;object-fit:contain;">' +
+        '<img src="' + LOGO_IMG + '" style="height:120px;width:auto;object-fit:contain;">' +
       '</div>' +
       '<div style="text-align:right;">' +
         '<div style="display:inline-flex;border:2px solid #111;border-radius:4px;overflow:hidden;margin-bottom:10px;">' +
@@ -1659,7 +1659,7 @@ function renderPreview() {
     '<div id="print-content" style="font-family:\'DM Sans\',sans-serif;background:#fff;padding:28px;color:#111;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">' +
         '<div>' +
-          '<img src="' + LOGO_IMG + '" style="height:75px;width:auto;object-fit:contain;">' +
+          '<img src="' + LOGO_IMG + '" style="height:110px;width:auto;object-fit:contain;">' +
         '</div>' +
         '<div style="text-align:right;">' +
           '<div style="display:inline-flex;border:1.5px solid #111;border-radius:4px;overflow:hidden;margin-bottom:6px;">' +
@@ -1903,23 +1903,35 @@ async function delGaleria(id) {
 
 async function subirGal(input) {
   var files = Array.from(input.files);
-  toast('Subiendo ' + files.length + ' imagen' + (files.length > 1 ? 'es' : '') + '...');
+  if (!files.length) return;
+  toast('Procesando imagenes...');
+  var ok = 0;
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
-    var path = 'gallery/' + Date.now() + '_' + file.name.replace(/\s/g,'_');
-    var up = await sb.storage.from('galeria').upload(path, file);
-    var imageUrl = null;
-    if (!up.error) {
-      var pu = sb.storage.from('galeria').getPublicUrl(path);
-      imageUrl = pu.data ? pu.data.publicUrl : null;
-    } else {
-      // Si falla storage, guardar igual sin imagen
-      console.warn('Storage error:', up.error.message);
-    }
+    var base64 = await new Promise(function(resolve) {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var img = new Image();
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        img.onload = function() {
+          var maxW = 800, maxH = 800;
+          var w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+          if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
     var nombre = file.name.replace(/\.[^/.]+$/, '');
-    await sb.from('galeria').insert({nombre: nombre, imagen_url: imageUrl, categoria: 'modelo'});
+    var r = await sb.from('galeria').insert({nombre: nombre, imagen_url: base64, categoria: 'modelo'});
+    if (!r.error) ok++;
   }
-  toast('Listo! ' + files.length + ' imagen' + (files.length > 1 ? 'es subidas' : ' subida'));
+  toast('Listo! ' + ok + ' imagen' + (ok > 1 ? 'es subidas' : ' subida'));
   input.value = '';
   loadGaleria();
 }
