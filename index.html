@@ -228,10 +228,30 @@ textarea.fi{resize:vertical;min-height:68px;}
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+      <!-- ALERTA ENTREGAS HOY -->
+      <div id="alerta-hoy" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:var(--rl);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <i class="ti ti-bell-ringing" style="font-size:22px;color:#d97706;flex-shrink:0;"></i>
+        <div><div style="font-weight:600;font-size:14px;color:#92400e;" id="alerta-hoy-txt">Tenes pedidos para entregar hoy</div>
+        <div style="font-size:12px;color:#b45309;margin-top:2px;" id="alerta-hoy-det"></div></div>
+        <button onclick="navTo('pedidos')" class="btn btn-sm" style="margin-left:auto;background:#f59e0b;color:#fff;border-color:#f59e0b;">Ver pedidos</button>
+      </div>
+      <!-- FILTRO FECHA -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="sec-title">Periodo:</div>
+        <button class="btn btn-primary btn-sm" onclick="setDashPeriodo('mes',this)">Este mes</button>
+        <button class="btn btn-sm" onclick="setDashPeriodo('semana',this)">Esta semana</button>
+        <button class="btn btn-sm" onclick="setDashPeriodo('hoy',this)">Hoy</button>
+        <button class="btn btn-sm" onclick="setDashPeriodo('todo',this)">Todo</button>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+          <input type="date" class="fi" id="dash-desde" style="width:140px;font-size:12px;" onchange="setDashPeriodo('custom',null)">
+          <span style="font-size:12px;color:var(--mu);">a</span>
+          <input type="date" class="fi" id="dash-hasta" style="width:140px;font-size:12px;" onchange="setDashPeriodo('custom',null)">
+        </div>
+      </div>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon si-bl"><i class="ti ti-currency-dollar"></i></div><div class="stat-val" id="d-v">-</div><div class="stat-label">Ventas del mes</div></div>
-        <div class="stat-card"><div class="stat-icon si-gr"><i class="ti ti-trending-up"></i></div><div class="stat-val" id="d-g">-</div><div class="stat-label">Ganancia estimada</div></div>
-        <div class="stat-card"><div class="stat-icon si-am"><i class="ti ti-clock"></i></div><div class="stat-val" id="d-p">-</div><div class="stat-label">Pedidos pendientes</div></div>
+        <div class="stat-card"><div class="stat-icon si-bl"><i class="ti ti-currency-dollar"></i></div><div class="stat-val" id="d-v">-</div><div class="stat-label" id="d-v-label">Ventas del mes</div></div>
+        <div class="stat-card"><div class="stat-icon si-gr"><i class="ti ti-trending-up"></i></div><div class="stat-val" id="d-g">-</div><div class="stat-label">Ganancia estimada (60%)</div></div>
+        <div class="stat-card"><div class="stat-icon si-am"><i class="ti ti-clock"></i></div><div class="stat-val" id="d-p">-</div><div class="stat-label">Pedidos activos</div></div>
         <div class="stat-card"><div class="stat-icon si-rd"><i class="ti ti-alert-triangle"></i></div><div class="stat-val" id="d-c">-</div><div class="stat-label">Filamentos criticos</div></div>
       </div>
       <div class="grid2">
@@ -259,7 +279,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
       <div class="twrap">
         <table>
-          <thead><tr><th>#</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th></th></tr></thead>
           <tbody id="ped-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
       </div>
@@ -498,11 +518,38 @@ textarea.fi{resize:vertical;min-height:68px;}
 
     <!-- REPORTES -->
     <div class="page" id="page-reportes">
+      <!-- Filtro fecha -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="sec-title">Filtrar por fecha:</div>
+        <button class="btn btn-primary btn-sm" onclick="setRepPeriodo('mes',this)">Este mes</button>
+        <button class="btn btn-sm" onclick="setRepPeriodo('semana',this)">Esta semana</button>
+        <button class="btn btn-sm" onclick="setRepPeriodo('todo',this)">Todo</button>
+        <input type="date" class="fi" id="rep-desde" style="width:140px;font-size:12px;" onchange="setRepPeriodo('custom',null)">
+        <span style="font-size:12px;color:var(--mu);">a</span>
+        <input type="date" class="fi" id="rep-hasta" style="width:140px;font-size:12px;" onchange="setRepPeriodo('custom',null)">
+      </div>
       <div class="stats-grid mb20">
         <div class="stat-card"><div class="stat-icon si-bl"><i class="ti ti-report-money"></i></div><div class="stat-val" id="re-v">-</div><div class="stat-label">Ventas totales</div></div>
-        <div class="stat-card"><div class="stat-icon si-gr"><i class="ti ti-check"></i></div><div class="stat-val" id="re-e">-</div><div class="stat-label">Entregados</div></div>
-        <div class="stat-card"><div class="stat-icon si-am"><i class="ti ti-receipt"></i></div><div class="stat-val" id="re-p">-</div><div class="stat-label">Total pedidos</div></div>
+        <div class="stat-card"><div class="stat-icon si-gr"><i class="ti ti-check"></i></div><div class="stat-val" id="re-e">-</div><div class="stat-label">Pedidos entregados</div></div>
+        <div class="stat-card"><div class="stat-icon si-am"><i class="ti ti-loader"></i></div><div class="stat-val" id="re-a">-</div><div class="stat-label">Pedidos activos</div></div>
         <div class="stat-card"><div class="stat-icon si-rd"><i class="ti ti-shopping-bag"></i></div><div class="stat-val" id="re-c">-</div><div class="stat-label">Gasto compras</div></div>
+      </div>
+      <!-- Lista pedidos filtrada -->
+      <div class="card mb20">
+        <div class="flex-between mb16">
+          <div class="sec-title">Pedidos del periodo</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-primary" onclick="filtrarRepPedidos('todos',this)">Todos</button>
+            <button class="btn btn-sm" onclick="filtrarRepPedidos('activos',this)">Activos</button>
+            <button class="btn btn-sm" onclick="filtrarRepPedidos('entregado',this)">Entregados</button>
+          </div>
+        </div>
+        <div class="twrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody id="re-ped-body"><tr><td colspan="5"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid2">
         <div class="card"><div class="sec-title mb16">Top clientes</div><div id="re-cli"><div class="loading"><i class="ti ti-loader"></i></div></div></div>
@@ -548,11 +595,27 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
     </div>
     <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Productos del pedido</div>
+      <div class="frow" style="margin-bottom:8px;">
+        <div class="fg"><label class="fl">Elegir del catalogo</label>
+          <select class="fi" id="mp-cat-sel" onchange="elegirDeCatalogo()">
+            <option value="">-- Seleccionar producto --</option>
+          </select>
+        </div>
+        <div class="fg" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-sm btn-primary" onclick="agregarItemPedido()" style="width:100%;"><i class="ti ti-plus"></i>Agregar</button>
+        </div>
+      </div>
+      <div id="mp-items-list"></div>
+      <div style="font-size:11px;color:var(--acc2);margin-top:6px;">O ingresa manualmente en el campo descripcion de arriba</div>
+    </div>
+    <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Consumo de filamento (descuenta stock)</div>
       <div class="frow">
         <div class="fg"><label class="fl">Filamento usado</label><select class="fi" id="mp-fil"><option value="">Sin filamento</option></select></div>
-        <div class="fg"><label class="fl">Gramos totales</label><input type="number" class="fi" id="mp-grm" placeholder="0"></div>
+        <div class="fg"><label class="fl">Gramos totales</label><input type="number" class="fi" id="mp-grm" placeholder="0" oninput="validarStock()"></div>
       </div>
+      <div id="stock-warn" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:12px;color:#b91c1c;margin-top:6px;"></div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="mp-notas" placeholder="Indicaciones especiales..."></textarea></div>
     <div class="mf">
@@ -780,49 +843,100 @@ async function loadPage(id) {
   else if (id === 'config') loadConfig();
 }
 
+var dashPeriodo = 'mes';
+var repPeriodo = 'mes';
+var repPedidosAll = [];
+
+function getPeriodoFechas(periodo, prefijo) {
+  var hoy = new Date();
+  var desde, hasta;
+  hasta = new Date(hoy); hasta.setHours(23,59,59,999);
+  if (periodo === 'hoy') {
+    desde = new Date(hoy); desde.setHours(0,0,0,0);
+  } else if (periodo === 'semana') {
+    desde = new Date(hoy); desde.setDate(hoy.getDate() - 7); desde.setHours(0,0,0,0);
+  } else if (periodo === 'mes') {
+    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  } else if (periodo === 'todo') {
+    return {desde: null, hasta: null};
+  } else if (periodo === 'custom') {
+    var d = document.getElementById((prefijo||'dash') + '-desde');
+    var h = document.getElementById((prefijo||'dash') + '-hasta');
+    desde = d && d.value ? new Date(d.value + 'T00:00:00') : null;
+    hasta = h && h.value ? new Date(h.value + 'T23:59:59') : null;
+    return {desde: desde, hasta: hasta};
+  }
+  return {desde: desde, hasta: hasta};
+}
+
+function setDashPeriodo(p, btn) {
+  dashPeriodo = p;
+  document.querySelectorAll('#page-dashboard .btn-sm').forEach(function(b) { if(!b.getAttribute('onclick') || b.getAttribute('onclick').includes('setDashPeriodo')) b.classList.remove('btn-primary'); });
+  if (btn) btn.classList.add('btn-primary');
+  loadDash();
+}
+
 async function loadDash() {
   var r1 = await sb.from('pedidos').select('*,clientes(nombre)').order('created_at', {ascending: false});
   var r2 = await sb.from('filamentos').select('*').eq('activo', true);
   Pedidos = r1.data || [];
   Filamentos = r2.data || [];
-  var mes = new Date().getMonth();
-  var vm = Pedidos.filter(function(p) { return new Date(p.created_at).getMonth() === mes; }).reduce(function(a, p) { return a + (p.total || 0); }, 0);
-  var pend = Pedidos.filter(function(p) { return p.estado === 'pendiente' || p.estado === 'produccion'; }).length;
-  var crit = Filamentos.filter(function(f) { return (f.gramos_disponibles || 0) <= (f.gramos_minimo || 0); }).length;
-  document.getElementById('d-v').textContent = money(vm);
-  document.getElementById('d-g').textContent = money(vm * 0.4);
-  document.getElementById('d-p').textContent = pend;
-  document.getElementById('d-c').textContent = crit;
-  document.getElementById('badge-ped').textContent = pend;
+
+  var fechas = getPeriodoFechas(dashPeriodo, 'dash');
+  var pedFiltrados = Pedidos.filter(function(p) {
+    if (!fechas.desde && !fechas.hasta) return true;
+    var f = new Date(p.created_at);
+    if (fechas.desde && f < fechas.desde) return false;
+    if (fechas.hasta && f > fechas.hasta) return false;
+    return true;
+  });
+
+  var ventas = pedFiltrados.reduce(function(a, p) { return a + (p.total || 0); }, 0);
+  var activos = Pedidos.filter(function(p) { return p.estado === 'pendiente' || p.estado === 'produccion' || p.estado === 'camino'; }).length;
+  var criticos = Filamentos.filter(function(f) { return (f.gramos_disponibles || 0) <= (f.gramos_minimo || 0); }).length;
+
+  document.getElementById('d-v').textContent = money(ventas);
+  document.getElementById('d-g').textContent = money(ventas * 0.60);
+  document.getElementById('d-p').textContent = activos;
+  document.getElementById('d-c').textContent = criticos;
+  document.getElementById('badge-ped').textContent = activos;
+
+  // Alerta entregas hoy
+  var hoyStr = new Date().toISOString().slice(0,10);
+  var entregasHoy = Pedidos.filter(function(p) {
+    return p.fecha_entrega === hoyStr && p.estado !== 'entregado';
+  });
+  var alertaEl = document.getElementById('alerta-hoy');
+  if (entregasHoy.length > 0) {
+    alertaEl.style.display = 'flex';
+    document.getElementById('alerta-hoy-txt').textContent = 'Tenes ' + entregasHoy.length + ' pedido' + (entregasHoy.length > 1 ? 's' : '') + ' para entregar HOY!';
+    document.getElementById('alerta-hoy-det').textContent = entregasHoy.map(function(p) { return (p.clientes && p.clientes.nombre) || 'Sin cliente'; }).join(', ');
+  } else {
+    alertaEl.style.display = 'none';
+  }
 
   var dp = document.getElementById('d-ped');
-  if (!Pedidos.length) {
-    dp.innerHTML = '<div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos aun</p></div>';
-  } else {
-    dp.innerHTML = Pedidos.slice(0, 5).map(function(p) {
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);">' +
-        '<div style="font-family:var(--fh);font-weight:700;font-size:12px;min-width:40px;">#' + p.numero + '</div>' +
-        '<div style="flex:1;font-size:13px;font-weight:500;">' + ((p.clientes && p.clientes.nombre) || '-') + '</div>' +
-        mkbadge(p.estado) +
-        '<div style="font-family:var(--fh);font-weight:700;font-size:13px;color:var(--acc);">' + money(p.total) + '</div>' +
-        '</div>';
-    }).join('');
-  }
+  dp.innerHTML = Pedidos.length ? Pedidos.slice(0,5).map(function(p) {
+    var esHoy = p.fecha_entrega === hoyStr && p.estado !== 'entregado';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);' + (esHoy ? 'background:#fffbeb;border-radius:6px;padding:8px;' : '') + '">' +
+      '<div style="font-size:11px;color:var(--mu);min-width:70px;">' + new Date(p.created_at).toLocaleDateString('es-AR') + '</div>' +
+      '<div style="flex:1;font-size:13px;font-weight:500;">' + ((p.clientes && p.clientes.nombre) || '-') + '</div>' +
+      (esHoy ? '<span style="font-size:10px;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:99px;font-weight:600;">HOY</span>' : '') +
+      mkbadge(p.estado) +
+      '<div style="font-family:var(--fh);font-weight:700;font-size:13px;color:var(--acc);">' + money(p.total) + '</div>' +
+      '</div>';
+  }).join('') : '<div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos</p></div>';
 
   var df = document.getElementById('d-fil');
   var clist = Filamentos.filter(function(f) { return (f.gramos_disponibles || 0) <= (f.gramos_minimo || 0); });
-  if (!clist.length) {
-    df.innerHTML = '<div class="empty"><i class="ti ti-check"></i><p>Todo el stock en orden</p></div>';
-  } else {
-    df.innerHTML = clist.slice(0, 5).map(function(f) {
-      var col = (f.gramos_disponibles || 0) === 0 ? 'var(--er)' : 'var(--wa)';
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);">' +
-        '<div style="width:12px;height:12px;border-radius:50%;background:' + (f.color_hex || '#888') + ';border:2px solid rgba(0,0,0,0.1);flex-shrink:0;"></div>' +
-        '<div style="flex:1;font-size:13px;font-weight:500;">' + f.color + ' <span style="font-size:11px;color:var(--mu);">' + f.material + '</span></div>' +
-        '<div style="font-family:var(--fh);font-weight:700;font-size:14px;color:' + col + ';">' + (f.gramos_disponibles || 0) + 'g</div>' +
-        '</div>';
-    }).join('');
-  }
+  df.innerHTML = clist.length ? clist.slice(0,5).map(function(f) {
+    var col = (f.gramos_disponibles || 0) === 0 ? 'var(--er)' : 'var(--wa)';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);">' +
+      '<div style="width:12px;height:12px;border-radius:50%;background:' + (f.color_hex||'#888') + ';border:2px solid rgba(0,0,0,0.1);flex-shrink:0;"></div>' +
+      '<div style="flex:1;font-size:13px;font-weight:500;">' + f.color + ' <span style="font-size:11px;color:var(--mu);">' + f.material + '</span></div>' +
+      '<div style="font-family:var(--fh);font-weight:700;font-size:14px;color:' + col + ';">' + (f.gramos_disponibles||0) + 'g</div>' +
+      '</div>';
+  }).join('') : '<div class="empty"><i class="ti ti-check"></i><p>Todo el stock en orden</p></div>';
 }
 
 async function loadPedidos(filter) {
@@ -860,32 +974,94 @@ function filterPed(f, btn) {
   renderPedidos(f);
 }
 
+var mpItems = [];
+
+function elegirDeCatalogo() {
+  var sel = document.getElementById('mp-cat-sel');
+  var id = sel.value;
+  if (!id) return;
+  var prod = (window.Catalogo || []).find(function(p) { return p.id === id; });
+  if (!prod) return;
+  mpItems.push({codigo: prod.codigo, nombre: prod.nombre, qty: 1, precio: prod.precio_venta, gramos: prod.gramos_filamento || 0});
+  sel.value = '';
+  renderMpItems();
+  recalcMpTotal();
+}
+
+function agregarItemPedido() { elegirDeCatalogo(); }
+
+function renderMpItems() {
+  var el = document.getElementById('mp-items-list');
+  if (!mpItems.length) { el.innerHTML = ''; return; }
+  el.innerHTML = mpItems.map(function(it, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bor);">' +
+      '<span style="font-size:11px;color:var(--acc2);font-weight:600;min-width:50px;">' + (it.codigo || '') + '</span>' +
+      '<span style="flex:1;font-size:13px;">' + it.nombre + '</span>' +
+      '<input type="number" value="' + it.qty + '" min="1" style="width:50px;padding:3px 6px;border:1px solid var(--bor);border-radius:6px;font-size:12px;text-align:center;" oninput="mpItems[' + i + '].qty=parseFloat(this.value)||1;recalcMpTotal()">' +
+      '<span style="font-family:var(--fh);font-weight:600;font-size:13px;min-width:70px;text-align:right;">' + money((it.qty||1)*(it.precio||0)) + '</span>' +
+      '<button onclick="mpItems.splice(' + i + ',1);renderMpItems();recalcMpTotal();" style="background:none;border:none;cursor:pointer;color:var(--er);font-size:15px;"><i class="ti ti-x"></i></button>' +
+    '</div>';
+  }).join('');
+}
+
+function recalcMpTotal() {
+  var total = mpItems.reduce(function(a, it) { return a + (it.qty||1)*(it.precio||0); }, 0);
+  if (total > 0) document.getElementById('mp-total').value = total;
+}
+
+function validarStock() {
+  var filId = document.getElementById('mp-fil').value;
+  var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
+  var warn = document.getElementById('stock-warn');
+  if (!filId || !grms) { warn.style.display = 'none'; return true; }
+  var fil = Filamentos.find(function(f) { return f.id === filId; });
+  if (!fil) { warn.style.display = 'none'; return true; }
+  if (grms > (fil.gramos_disponibles || 0)) {
+    warn.style.display = 'block';
+    warn.textContent = 'Stock insuficiente! Disponible: ' + (fil.gramos_disponibles||0) + 'g - Necesitas: ' + grms + 'g - Faltan: ' + (grms - (fil.gramos_disponibles||0)) + 'g';
+    return false;
+  }
+  warn.style.display = 'none';
+  return true;
+}
+
 async function savePedido() {
   if (!sb) { toast('Sin conexion', 'err'); return; }
   var cli = document.getElementById('mp-cli').value;
   if (!cli) { toast('Selecciona un cliente', 'err'); return; }
+  var filId = document.getElementById('mp-fil').value;
+  var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
+  if (filId && grms > 0 && !validarStock()) {
+    toast('Stock insuficiente para este pedido', 'err'); return;
+  }
+  var desc = document.getElementById('mp-desc').value;
+  if (mpItems.length > 0) {
+    desc = mpItems.map(function(it) { return (it.codigo ? '['+it.codigo+'] ' : '') + it.nombre + ' x' + it.qty; }).join(', ');
+  }
   var r = await sb.from('pedidos').insert({
     cliente_id: cli,
     estado: document.getElementById('mp-est').value,
     fecha_entrega: document.getElementById('mp-fecha').value || null,
-    notas: document.getElementById('mp-desc').value,
+    notas: desc,
     total: parseFloat(document.getElementById('mp-total').value) || 0
   }).select().single();
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
-  var filId = document.getElementById('mp-fil').value;
-  var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
   if (filId && grms > 0) {
     var fil = Filamentos.find(function(f) { return f.id === filId; });
     if (fil) {
       var nuevo = Math.max(0, (fil.gramos_disponibles || 0) - grms);
       await sb.from('filamentos').update({gramos_disponibles: nuevo}).eq('id', filId);
-      await sb.from('filamento_movimientos').insert({filamento_id: filId, tipo: 'salida', gramos: grms, motivo: 'Pedido #' + r.data.numero, pedido_id: r.data.id});
+      await sb.from('filamento_movimientos').insert({filamento_id: filId, tipo: 'salida', gramos: grms, motivo: 'Pedido ' + new Date().toLocaleDateString('es-AR'), pedido_id: r.data.id});
     }
   }
   toast('Pedido guardado');
   closeModal('m-pedido');
+  mpItems = [];
+  renderMpItems();
   ['mp-cli','mp-fecha','mp-desc','mp-total','mp-notas','mp-grm'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('stock-warn').style.display = 'none';
   await loadPedidos();
+  await loadDash();
 }
 
 async function avanzarPed(id, actual) {
@@ -1524,51 +1700,88 @@ async function subirGal(input) {
   loadGaleria();
 }
 
+function setRepPeriodo(p, btn) {
+  repPeriodo = p;
+  document.querySelectorAll('#page-reportes .btn-sm').forEach(function(b) {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes('setRepPeriodo')) b.classList.remove('btn-primary');
+  });
+  if (btn) btn.classList.add('btn-primary');
+  loadReportes();
+}
+function filtrarRepPedidos(tipo, btn) {
+  document.querySelectorAll('#page-reportes .btn-sm').forEach(function(b) {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes('filtrarRepPedidos')) b.classList.remove('btn-primary');
+  });
+  if (btn) btn.classList.add('btn-primary');
+  var list = repPedidosAll;
+  if (tipo === 'activos') list = repPedidosAll.filter(function(p) { return p.estado !== 'entregado' && p.estado !== 'cancelado'; });
+  else if (tipo === 'entregado') list = repPedidosAll.filter(function(p) { return p.estado === 'entregado'; });
+  renderRepPedidos(list);
+}
+function renderRepPedidos(list) {
+  var tbody = document.getElementById('re-ped-body');
+  if (!list || !list.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos</p></div></td></tr>'; return; }
+  tbody.innerHTML = list.map(function(p) {
+    return '<tr><td style="font-size:12px;color:var(--mu);">' + new Date(p.created_at).toLocaleDateString('es-AR') + '</td>' +
+      '<td style="font-weight:500;">' + ((p.clientes && p.clientes.nombre) || '-') + '</td>' +
+      '<td style="color:var(--mu);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.notas||'-') + '</td>' +
+      '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(p.total) + '</span></td>' +
+      '<td>' + mkbadge(p.estado) + '</td></tr>';
+  }).join('');
+}
 async function loadReportes() {
-  var r1 = await sb.from('pedidos').select('*,clientes(nombre)');
+  var fechas = getPeriodoFechas(repPeriodo, 'rep');
+  var query = sb.from('pedidos').select('*,clientes(nombre)').order('created_at', {ascending: false});
+  if (fechas.desde) query = query.gte('created_at', fechas.desde.toISOString());
+  if (fechas.hasta) query = query.lte('created_at', fechas.hasta.toISOString());
+  var r1 = await query;
   var r2 = await sb.from('compras').select('*');
   var r3 = await sb.from('filamentos').select('*').eq('activo', true);
   var pedidos = r1.data || [], compras = r2.data || [], fils = r3.data || [];
-  var totalV = pedidos.reduce(function(a, p) { return a + (p.total || 0); }, 0);
-  var entregados = pedidos.filter(function(p) { return p.estado === 'entregado'; }).length;
-  var totalC = compras.reduce(function(a, c) { return a + (c.precio_total || 0); }, 0);
+  repPedidosAll = pedidos;
+  var totalV = pedidos.reduce(function(a,p) { return a+(p.total||0); }, 0);
+  var entregados = pedidos.filter(function(p) { return p.estado==='entregado'; }).length;
+  var activos = pedidos.filter(function(p) { return p.estado!=='entregado'&&p.estado!=='cancelado'; }).length;
+  var totalC = compras.reduce(function(a,c) { return a+(c.precio_total||0); }, 0);
   document.getElementById('re-v').textContent = money(totalV);
   document.getElementById('re-e').textContent = entregados;
-  document.getElementById('re-p').textContent = pedidos.length;
+  document.getElementById('re-a').textContent = activos;
   document.getElementById('re-c').textContent = money(totalC);
+  renderRepPedidos(pedidos);
   var cliMap = {};
-  pedidos.forEach(function(p) { if (p.clientes && p.clientes.nombre) cliMap[p.clientes.nombre] = (cliMap[p.clientes.nombre] || 0) + (p.total || 0); });
-  var topCli = Object.entries(cliMap).sort(function(a,b) { return b[1]-a[1]; }).slice(0,5);
-  document.getElementById('re-cli').innerHTML = topCli.length ? topCli.map(function(entry) {
-    var n = entry[0], t = entry[1];
-    var ac = avatarColor(n);
+  pedidos.forEach(function(p) { if (p.clientes&&p.clientes.nombre) cliMap[p.clientes.nombre]=(cliMap[p.clientes.nombre]||0)+(p.total||0); });
+  var topCli = Object.entries(cliMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  document.getElementById('re-cli').innerHTML = topCli.length ? topCli.map(function(e) {
+    var n=e[0],t=e[1],ac=avatarColor(n);
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bor);">' +
-      '<div style="display:flex;align-items:center;gap:9px;">' +
-      '<div style="width:26px;height:26px;border-radius:50%;background:' + ac[0] + ';color:' + ac[1] + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;">' + initials(n) + '</div>' +
-      '<span style="font-size:13px;font-weight:500;">' + n + '</span></div>' +
-      '<span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(t) + '</span></div>';
+      '<div style="display:flex;align-items:center;gap:9px;"><div style="width:26px;height:26px;border-radius:50%;background:'+ac[0]+';color:'+ac[1]+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;">'+initials(n)+'</div>' +
+      '<span style="font-size:13px;font-weight:500;">'+n+'</span></div><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">'+money(t)+'</span></div>';
   }).join('') : '<div class="empty"><i class="ti ti-users"></i><p>Sin datos</p></div>';
   document.getElementById('re-fil').innerHTML = fils.map(function(f) {
-    var col = (f.gramos_disponibles || 0) === 0 ? 'var(--er)' : ((f.gramos_disponibles || 0) <= (f.gramos_minimo || 0) ? 'var(--wa)' : 'var(--ok)');
+    var col=(f.gramos_disponibles||0)===0?'var(--er)':((f.gramos_disponibles||0)<=(f.gramos_minimo||0)?'var(--wa)':'var(--ok)');
     return '<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--bor);">' +
-      '<div style="width:10px;height:10px;border-radius:50%;background:' + (f.color_hex||'#888') + ';border:1px solid rgba(0,0,0,0.1);flex-shrink:0;"></div>' +
-      '<div style="flex:1;font-size:13px;">' + f.color + ' <span style="font-size:11px;color:var(--mu);">' + f.material + '</span></div>' +
-      '<div style="font-family:var(--fh);font-weight:700;font-size:13px;color:' + col + ';">' + (f.gramos_disponibles || 0) + 'g</div></div>';
-  }).join('') || '<div class="empty"><i class="ti ti-line-dashed"></i><p>Sin filamentos</p></div>';
+      '<div style="width:10px;height:10px;border-radius:50%;background:'+(f.color_hex||'#888')+';border:1px solid rgba(0,0,0,0.1);flex-shrink:0;"></div>' +
+      '<div style="flex:1;font-size:13px;">'+f.color+' <span style="font-size:11px;color:var(--mu);">'+f.material+'</span></div>' +
+      '<div style="font-family:var(--fh);font-weight:700;font-size:13px;color:'+col+';">'+(f.gramos_disponibles||0)+'g</div></div>';
+  }).join('')||'<div class="empty"><i class="ti ti-line-dashed"></i><p>Sin filamentos</p></div>';
 }
-
 async function loadCatalogo() {
   var r = await sb.from('catalogo').select('*').order('codigo');
   var list = r.data || [];
+  window.Catalogo = list;
   document.getElementById('cat-cnt').textContent = list.length + ' productos en catalogo';
+  var sel = document.getElementById('mp-cat-sel');
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Seleccionar producto --</option>' + list.map(function(p) {
+      return '<option value="' + p.id + '">' + (p.codigo ? '['+p.codigo+'] ' : '') + p.nombre + ' - ' + money(p.precio_venta) + '</option>';
+    }).join('');
+  }
   var tbody = document.getElementById('cat-body');
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="ti ti-tags"></i><p>Sin productos aun. Agrega tu primer codigo!</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(function(p) {
-    var ganancia = (p.precio_venta || 0) - (p.costo || 0);
-    var ganCol = ganancia >= 0 ? 'color:var(--ok);' : 'color:var(--er);';
     return '<tr>' +
       '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + (p.codigo || '-') + '</span></td>' +
       '<td style="font-weight:500;">' + (p.nombre || '-') + '</td>' +
@@ -1576,9 +1789,7 @@ async function loadCatalogo() {
       '<td><span style="font-family:var(--fh);font-weight:700;">' + money(p.precio_venta) + '</span></td>' +
       '<td style="color:var(--mu);">' + money(p.costo) + '</td>' +
       '<td><span class="badge b-bl">' + (p.categoria || '-') + '</span></td>' +
-      '<td><div class="tda">' +
-        '<button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button>' +
-      '</div></td>' +
+      '<td><div class="tda"><button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
       '</tr>';
   }).join('');
 }
