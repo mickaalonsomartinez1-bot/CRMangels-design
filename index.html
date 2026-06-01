@@ -1067,7 +1067,7 @@ async function saveProducto() {
     notas: document.getElementById('mp2-notas').value,
     colores: coloresValidos
   });
-  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  if (r.error) { toast('Error guardando: ' + r.error.message, 'err'); console.error('saveProducto error:', r.error); return; }
   toast('Producto guardado');
   closeModal('m-producto');
   mp2Colores = [{filamento_id:'', color:'', gramos:0}];
@@ -1096,9 +1096,9 @@ function renderMpItems() {
     // Info de filamentos para items del catalogo
     var filInfo = '';
     if (!it.manual && it.filamentos && it.filamentos.length) {
-      filInfo = '<div style="font-size:10.5px;color:var(--ok);margin-top:2px;">Descuenta: ' +
-        it.filamentos.map(function(f) { return (f.color||'?') + ' ' + (f.gramos||0) + 'g'; }).join(', ') +
-        ' x cant.</div>';
+      filInfo = '<div style="font-size:10.5px;color:var(--ok);margin-top:2px;"><i class="ti ti-check" style="font-size:11px;"></i> Descuenta auto: ' +
+        it.filamentos.map(function(f) { return (f.color||'?') + ' ' + ((f.gramos||0)*(it.qty||1)) + 'g'; }).join(', ') +
+        '</div>';
     } else if (it.manual) {
       filInfo = '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
         '<span style="font-size:10.5px;color:var(--mu);">Filamento manual:</span>' +
@@ -2181,28 +2181,7 @@ async function loadCatalogo() {
   }).join('');
 }
 
-async function saveProducto() {
-  if (!sb) { toast('Sin conexion', 'err'); return; }
-  var cod = document.getElementById('mp2-cod').value.trim();
-  var nom = document.getElementById('mp2-nom').value.trim();
-  if (!nom) { toast('Ingresa el nombre del producto', 'err'); return; }
-  var r = await sb.from('catalogo').insert({
-    codigo: cod,
-    nombre: nom,
-    descripcion: document.getElementById('mp2-desc').value,
-    categoria: document.getElementById('mp2-cat').value,
-    precio_venta: parseFloat(document.getElementById('mp2-precio').value) || 0,
-    costo: parseFloat(document.getElementById('mp2-costo').value) || 0,
-    gramos_filamento: parseFloat(document.getElementById('mp2-grm').value) || 0,
-    tiempo_impresion: parseFloat(document.getElementById('mp2-tiempo').value) || 0,
-    notas: document.getElementById('mp2-notas').value
-  });
-  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
-  toast('Producto guardado');
-  closeModal('m-producto');
-  ['mp2-cod','mp2-nom','mp2-desc','mp2-precio','mp2-costo','mp2-grm','mp2-tiempo','mp2-notas'].forEach(function(id) { document.getElementById(id).value = ''; });
-  await loadCatalogo();
-}
+// saveProducto moved above
 
 async function delProducto(id) {
   if (!confirm('Eliminar este producto?')) return;
