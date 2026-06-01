@@ -492,7 +492,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="page" id="page-catalogo">
       <div class="flex-between mb16">
         <div id="cat-cnt" style="font-size:13px;color:var(--mu);">Cargando...</div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('m-producto')"><i class="ti ti-plus"></i>Nuevo producto</button>
+        <button class="btn btn-primary btn-sm" onclick="openModalProducto()"><i class="ti ti-plus"></i>Nuevo producto</button>
       </div>
       <div class="twrap">
         <table>
@@ -844,7 +844,13 @@ document.querySelectorAll('.ni').forEach(function(el) {
   el.addEventListener('click', function() { navTo(el.dataset.page); });
 });
 
-function openModal(id) { document.getElementById(id).classList.add('open'); }
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'm-pedido') {
+    mpItems = [];
+    renderMpItems();
+  }
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.overlay').forEach(function(o) {
   o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('open'); });
@@ -1085,14 +1091,36 @@ function agregarItemPedido() { elegirDeCatalogo(); }
 
 function renderMpItems() {
   var el = document.getElementById('mp-items-list');
-  if (!mpItems.length) { el.innerHTML = ''; return; }
+  if (!mpItems.length) { el.innerHTML = '<div style="font-size:12px;color:var(--mu);padding:6px 0;">Sin items agregados aun</div>'; return; }
   el.innerHTML = mpItems.map(function(it, i) {
-    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bor);">' +
-      '<span style="font-size:11px;color:var(--acc2);font-weight:600;min-width:50px;">' + (it.codigo || '') + '</span>' +
-      '<span style="flex:1;font-size:13px;">' + it.nombre + '</span>' +
-      '<input type="number" value="' + it.qty + '" min="1" style="width:50px;padding:3px 6px;border:1px solid var(--bor);border-radius:6px;font-size:12px;text-align:center;" oninput="mpItems[' + i + '].qty=parseFloat(this.value)||1;recalcMpTotal()">' +
-      '<span style="font-family:var(--fh);font-weight:600;font-size:13px;min-width:70px;text-align:right;">' + money((it.qty||1)*(it.precio||0)) + '</span>' +
-      '<button onclick="mpItems.splice(' + i + ',1);renderMpItems();recalcMpTotal();" style="background:none;border:none;cursor:pointer;color:var(--er);font-size:15px;"><i class="ti ti-x"></i></button>' +
+    // Info de filamentos para items del catalogo
+    var filInfo = '';
+    if (!it.manual && it.filamentos && it.filamentos.length) {
+      filInfo = '<div style="font-size:10.5px;color:var(--ok);margin-top:2px;">Descuenta: ' +
+        it.filamentos.map(function(f) { return (f.color||'?') + ' ' + (f.gramos||0) + 'g'; }).join(', ') +
+        ' x cant.</div>';
+    } else if (it.manual) {
+      filInfo = '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
+        '<span style="font-size:10.5px;color:var(--mu);">Filamento manual:</span>' +
+        '<select style="font-size:11px;padding:2px 4px;border:1px solid var(--bor);border-radius:5px;max-width:140px;" onchange="mpItems['+i+'].filamento_id_manual=this.value">' +
+          '<option value="">Sin descuento</option>' +
+          Filamentos.map(function(f){return '<option value="'+f.id+'">'+ f.color+' ('+f.gramos_disponibles+'g)</option>';}).join('') +
+        '</select>' +
+        '<input type="number" placeholder="g" style="width:50px;font-size:11px;padding:2px 6px;border:1px solid var(--bor);border-radius:5px;" oninput="mpItems['+i+'].gramos_manual=parseFloat(this.value)||0">' +
+        '</div>';
+    }
+    return '<div style="background:#fff;border:1px solid var(--bor);border-radius:8px;padding:9px 12px;margin-bottom:7px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        (it.codigo ? '<span style="font-size:11px;font-weight:700;color:var(--acc2);background:var(--acl);padding:2px 7px;border-radius:5px;">' + it.codigo + '</span>' : '') +
+        '<span style="flex:1;font-size:13px;font-weight:500;">' + it.nombre + '</span>' +
+        '<div style="display:flex;align-items:center;gap:5px;">' +
+          '<span style="font-size:11px;color:var(--mu);">x</span>' +
+          '<input type="number" value="' + (it.qty||1) + '" min="1" style="width:46px;padding:3px 5px;border:1px solid var(--bor);border-radius:6px;font-size:12px;text-align:center;" oninput="mpItems['+i+'].qty=parseFloat(this.value)||1;renderMpItems();recalcMpTotal()">' +
+          '<span style="font-family:var(--fh);font-weight:700;font-size:13px;color:var(--acc);min-width:75px;text-align:right;">' + money((it.qty||1)*(it.precio||0)) + '</span>' +
+          '<button onclick="mpItems.splice('+i+',1);renderMpItems();recalcMpTotal();" style="background:none;border:none;cursor:pointer;color:var(--er);font-size:16px;line-height:1;"><i class="ti ti-x"></i></button>' +
+        '</div>' +
+      '</div>' +
+      filInfo +
     '</div>';
   }).join('');
 }
@@ -1150,20 +1178,33 @@ async function savePedido() {
       await sb.from('filamento_movimientos').insert({filamento_id: filId, tipo: 'salida', gramos: grms, motivo: 'Pedido manual', pedido_id: r.data.id});
     }
   }
-  // Descontar filamentos multi-color de cada item del catalogo
+  // Descontar filamentos de cada item
   for (var ii = 0; ii < mpItems.length; ii++) {
     var item = mpItems[ii];
-    if (!item.filamentos || !item.filamentos.length) continue;
-    for (var jj = 0; jj < item.filamentos.length; jj++) {
-      var fc = item.filamentos[jj];
-      if (!fc.filamento_id || !fc.gramos) continue;
-      var grmsTot = (fc.gramos || 0) * (item.qty || 1);
-      var filObj = Filamentos.find(function(f) { return f.id === fc.filamento_id; });
-      if (filObj) {
-        var nuevoG = Math.max(0, (filObj.gramos_disponibles || 0) - grmsTot);
-        await sb.from('filamentos').update({gramos_disponibles: nuevoG}).eq('id', fc.filamento_id);
-        await sb.from('filamento_movimientos').insert({filamento_id: fc.filamento_id, tipo: 'salida', gramos: grmsTot, motivo: item.nombre + ' x' + (item.qty||1), pedido_id: r.data.id});
-        filObj.gramos_disponibles = nuevoG;
+    // Item del catalogo: descontar todos sus filamentos
+    if (!item.manual && item.filamentos && item.filamentos.length) {
+      for (var jj = 0; jj < item.filamentos.length; jj++) {
+        var fc = item.filamentos[jj];
+        if (!fc.filamento_id || !fc.gramos) continue;
+        var grmsTot = (fc.gramos || 0) * (item.qty || 1);
+        var filObj = Filamentos.find(function(f) { return f.id === fc.filamento_id; });
+        if (filObj) {
+          var nuevoG = Math.max(0, (filObj.gramos_disponibles || 0) - grmsTot);
+          await sb.from('filamentos').update({gramos_disponibles: nuevoG}).eq('id', fc.filamento_id);
+          await sb.from('filamento_movimientos').insert({filamento_id: fc.filamento_id, tipo: 'salida', gramos: grmsTot, motivo: item.nombre + ' x' + (item.qty||1), pedido_id: r.data.id});
+          filObj.gramos_disponibles = nuevoG;
+        }
+      }
+    }
+    // Item manual: descontar filamento elegido manualmente
+    if (item.manual && item.filamento_id_manual && item.gramos_manual > 0) {
+      var grmsManual = item.gramos_manual * (item.qty || 1);
+      var filMan = Filamentos.find(function(f) { return f.id === item.filamento_id_manual; });
+      if (filMan) {
+        var nuevoMan = Math.max(0, (filMan.gramos_disponibles || 0) - grmsManual);
+        await sb.from('filamentos').update({gramos_disponibles: nuevoMan}).eq('id', item.filamento_id_manual);
+        await sb.from('filamento_movimientos').insert({filamento_id: item.filamento_id_manual, tipo: 'salida', gramos: grmsManual, motivo: item.nombre + ' (manual)', pedido_id: r.data.id});
+        filMan.gramos_disponibles = nuevoMan;
       }
     }
   }
