@@ -180,6 +180,19 @@ textarea.fi{resize:vertical;min-height:68px;}
 <body>
 
 <!-- SIDEBAR -->
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:flex;position:fixed;inset:0;background:var(--sid);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="background:#fff;border-radius:18px;padding:36px 32px;width:340px;box-shadow:0 8px 40px rgba(0,0,0,0.3);text-align:center;">
+    <div style="font-family:var(--fh);font-size:22px;font-weight:700;margin-bottom:4px;">Angel's Design</div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:24px;">CRM Interno — Ingresá tu usuario</div>
+    <div class="fg" style="text-align:left;"><label class="fl">Usuario</label><input class="fi" id="login-user" placeholder="usuario" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="fg" style="text-align:left;"><label class="fl">Contraseña</label><input type="password" class="fi" id="login-pass" placeholder="contraseña" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div id="login-err" style="color:var(--er);font-size:12px;margin-bottom:10px;display:none;">Usuario o contraseña incorrectos</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
+    <div style="font-size:11px;color:var(--mu);margin-top:16px;">Usuario 1: <b>angel</b> / <b>design2024</b><br>Usuario 2: <b>admin</b> / <b>angels123</b></div>
+  </div>
+</div>
+
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-row">
@@ -313,7 +326,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         </div>
         <div class="twrap">
           <table>
-            <thead><tr><th>#</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Estado</th><th></th></tr></thead>
             <tbody id="pres-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
           </table>
         </div>
@@ -466,7 +479,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
       <div class="twrap">
         <table>
-          <thead><tr><th>#</th><th>Proveedor</th><th>Descripcion</th><th>Total</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th></th></tr></thead>
           <tbody id="comp-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
       </div>
@@ -557,6 +570,18 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div class="grid2">
         <div class="card"><div class="sec-title mb16">Top clientes</div><div id="re-cli"><div class="loading"><i class="ti ti-loader"></i></div></div></div>
         <div class="card"><div class="sec-title mb16">Stock filamentos</div><div id="re-fil"><div class="loading"><i class="ti ti-loader"></i></div></div></div>
+      </div>
+      <!-- EXPORTAR -->
+      <div class="card" style="margin-top:18px;">
+        <div class="sec-title mb16"><i class="ti ti-download" style="color:var(--acc);"></i> Exportar / Backup</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="exportarCSV('pedidos')"><i class="ti ti-file-spreadsheet"></i>Pedidos CSV</button>
+          <button class="btn btn-primary" onclick="exportarCSV('clientes')"><i class="ti ti-users"></i>Clientes CSV</button>
+          <button class="btn btn-primary" onclick="exportarCSV('compras')"><i class="ti ti-truck"></i>Compras CSV</button>
+          <button class="btn btn-primary" onclick="exportarCSV('filamentos')"><i class="ti ti-line-dashed"></i>Filamentos CSV</button>
+          <button class="btn btn-primary" onclick="exportarCSV('catalogo')"><i class="ti ti-tags"></i>Catalogo CSV</button>
+          <button class="btn" onclick="exportarTodo()"><i class="ti ti-archive"></i>Backup completo (JSON)</button>
+        </div>
       </div>
     </div>
 
@@ -765,6 +790,70 @@ textarea.fi{resize:vertical;min-height:68px;}
       <button class="btn" onclick="closeModal('m-producto')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveProducto()"><i class="ti ti-check"></i>Guardar</button>
     </div>
+  </div>
+</div>
+
+<!-- EDIT CLIENTE -->
+<div class="overlay" id="m-edit-cliente">
+  <div class="modal">
+    <div class="mh"><div class="mt">Editar cliente</div><button class="mc" onclick="closeModal('m-edit-cliente')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="ec-id">
+    <div class="fg"><label class="fl">Nombre</label><input class="fi" id="ec-nom"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="ec-email"></div>
+      <div class="fg"><label class="fl">Telefono</label><input class="fi" id="ec-tel"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Direccion</label><input class="fi" id="ec-dir"></div>
+      <div class="fg"><label class="fl">Estado</label><select class="fi" id="ec-est"><option value="activo">Activo</option><option value="vip">VIP</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="ec-notas" rows="2"></textarea></div>
+    <div class="mf"><button class="btn" onclick="closeModal('m-edit-cliente')">Cancelar</button><button class="btn btn-primary" onclick="updateCliente()"><i class="ti ti-check"></i>Guardar</button></div>
+  </div>
+</div>
+
+<!-- EDIT PEDIDO -->
+<div class="overlay" id="m-edit-pedido">
+  <div class="modal">
+    <div class="mh"><div class="mt">Editar pedido</div><button class="mc" onclick="closeModal('m-edit-pedido')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="ep-id">
+    <div class="frow">
+      <div class="fg"><label class="fl">Cliente</label><select class="fi" id="ep-cli"></select></div>
+      <div class="fg"><label class="fl">Fecha entrega</label><input type="date" class="fi" id="ep-fecha"></div>
+    </div>
+    <div class="fg"><label class="fl">Descripcion</label><input class="fi" id="ep-desc"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Total ($)</label><input type="number" class="fi" id="ep-total"></div>
+      <div class="fg"><label class="fl">Estado</label>
+        <select class="fi" id="ep-estado">
+          <option value="pendiente">Pendiente</option>
+          <option value="produccion">En produccion</option>
+          <option value="camino">En camino</option>
+          <option value="entregado">Entregado</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="ep-notas" rows="2"></textarea></div>
+    <div class="mf"><button class="btn" onclick="closeModal('m-edit-pedido')">Cancelar</button><button class="btn btn-primary" onclick="updatePedido()"><i class="ti ti-check"></i>Guardar</button></div>
+  </div>
+</div>
+
+<!-- EDIT COMPRA -->
+<div class="overlay" id="m-edit-compra">
+  <div class="modal">
+    <div class="mh"><div class="mt">Editar compra</div><button class="mc" onclick="closeModal('m-edit-compra')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="eco-id">
+    <div class="frow">
+      <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="eco-prov"></div>
+      <div class="fg"><label class="fl">Fecha</label><input type="date" class="fi" id="eco-fecha"></div>
+    </div>
+    <div class="fg"><label class="fl">Descripcion</label><input class="fi" id="eco-desc"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Precio total ($)</label><input type="number" class="fi" id="eco-precio"></div>
+      <div class="fg"><label class="fl">Estado</label><select class="fi" id="eco-est"><option value="pendiente">Pendiente</option><option value="en_transito">En transito</option><option value="recibido">Recibido</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="eco-notas" rows="2"></textarea></div>
+    <div class="mf"><button class="btn" onclick="closeModal('m-edit-compra')">Cancelar</button><button class="btn btn-primary" onclick="updateCompra()"><i class="ti ti-check"></i>Guardar</button></div>
   </div>
 </div>
 
@@ -991,6 +1080,7 @@ function renderPedidos(filter) {
       '<td style="color:var(--mu);">' + fdate(p.fecha_entrega) + '</td>' +
       '<td>' + mkbadge(p.estado) + '</td>' +
       '<td><div class="tda">' +
+        '<button class="btn btn-sm" onclick=\'editPedido(' + JSON.stringify(p) + ')\'><i class="ti ti-edit"></i></button>' +
         '<button class="btn btn-sm" onclick="avanzarPed(\'' + p.id + '\',\'' + p.estado + '\')"><i class="ti ti-arrow-right"></i></button>' +
         '<button class="btn btn-sm" style="background:#0a0a0f;color:#fff;border-color:#0a0a0f;" onclick=\'generarFactura(' + JSON.stringify(p) + ')\'><i class="ti ti-file-invoice"></i></button>' +
         '<button class="btn btn-sm btn-wsp" onclick=\'wspPedido(' + JSON.stringify(p) + ')\'><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>' +
@@ -1153,7 +1243,7 @@ async function savePedido() {
   var filId = document.getElementById('mp-fil').value;
   var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
   if (filId && grms > 0 && !validarStock()) {
-    toast('Stock insuficiente para este pedido', 'err'); return;
+    // Just show warning but continue anyway - user already saw the warning
   }
   var desc = document.getElementById('mp-desc').value;
   var notas = document.getElementById('mp-notas').value;
@@ -1397,7 +1487,7 @@ async function loadClientes() {
         '<td style="color:var(--mu);">' + (c.email || '-') + '</td>' +
         '<td style="color:var(--mu);">' + (c.telefono || '-') + '</td>' +
         '<td>' + mkbadge(c.estado || 'activo') + '</td>' +
-        '<td><div class="tda"><button class="btn btn-sm btn-danger" onclick="delCliente(\'' + c.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
+        '<td><div class="tda"><button class="btn btn-sm" onclick=\'editCliente(' + JSON.stringify(c) + ')\'><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delCliente(\'' + c.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
         '</tr>';
     }).join('');
   }
@@ -1534,13 +1624,13 @@ async function loadCompras() {
   }
   tbody.innerHTML = Compras.map(function(c) {
     return '<tr>' +
-      '<td><span style="font-family:var(--fh);font-weight:700;">C-' + String(c.numero).padStart(3,'0') + '</span></td>' +
+      '<td style="font-size:12px;color:var(--mu);">' + new Date(c.created_at).toLocaleDateString('es-AR') + '</td>' +
       '<td>' + (c.descripcion ? c.descripcion.split(' ')[0] : '-') + '</td>' +
       '<td style="color:var(--mu);">' + c.descripcion + '</td>' +
       '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(c.precio_total) + '</span></td>' +
       '<td style="color:var(--mu);">' + fdate(c.fecha_compra) + '</td>' +
       '<td>' + mkbadge(c.estado) + '</td>' +
-      '<td><div class="tda"><button class="btn btn-sm btn-danger" onclick="delCompra(\'' + c.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
+      '<td><div class="tda"><button class="btn btn-sm" onclick=\'editCompra(' + JSON.stringify(c) + ')\'><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delCompra(\'' + c.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
       '</tr>';
   }).join('');
 }
@@ -1667,7 +1757,7 @@ function renderPresLista(filter) {
     var desc = p.descripcion || '';
     var num = p.numero || '';
     return '<tr>' +
-      '<td><span style="font-family:var(--fh);font-weight:700;">#P-' + String(num).padStart(3,'0') + '</span></td>' +
+      '<td style="font-size:12px;color:var(--mu);">' + new Date(p.created_at).toLocaleDateString('es-AR') + '</td>' +
       '<td style="font-weight:500;">' + cli + '</td>' +
       '<td style="color:var(--mu);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + desc + '</td>' +
       '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(tot) + '</span></td>' +
@@ -2208,7 +2298,159 @@ function saveConfig() {
   loadDash();
 }
 
+// ── LOGIN ────────────────────────────────────────────────────────
+var USERS = {angel:'design2024', admin:'angels123'};
+function doLogin() {
+  var u = document.getElementById('login-user').value.trim().toLowerCase();
+  var p = document.getElementById('login-pass').value;
+  var err = document.getElementById('login-err');
+  if (USERS[u] && USERS[u] === p) {
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('ad_logged','1');
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+// ── EDIT CLIENTES ────────────────────────────────────────────────
+function editCliente(c) {
+  document.getElementById('ec-id').value = c.id;
+  document.getElementById('ec-nom').value = c.nombre || '';
+  document.getElementById('ec-email').value = c.email || '';
+  document.getElementById('ec-tel').value = c.telefono || '';
+  document.getElementById('ec-dir').value = c.direccion || '';
+  document.getElementById('ec-est').value = c.estado || 'activo';
+  document.getElementById('ec-notas').value = c.notas || '';
+  openModal('m-edit-cliente');
+}
+async function updateCliente() {
+  var id = document.getElementById('ec-id').value;
+  var r = await sb.from('clientes').update({
+    nombre: document.getElementById('ec-nom').value,
+    email: document.getElementById('ec-email').value,
+    telefono: document.getElementById('ec-tel').value,
+    direccion: document.getElementById('ec-dir').value,
+    estado: document.getElementById('ec-est').value,
+    notas: document.getElementById('ec-notas').value
+  }).eq('id', id);
+  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  toast('Cliente actualizado'); closeModal('m-edit-cliente'); loadClientes();
+}
+
+// ── EDIT PEDIDOS ─────────────────────────────────────────────────
+function editPedido(p) {
+  document.getElementById('ep-id').value = p.id;
+  document.getElementById('ep-cli').innerHTML = '<option value="">Selecciona...</option>' +
+    Clientes.map(function(c) { return '<option value="'+c.id+'"'+(c.id===p.cliente_id?' selected':'')+'>'+c.nombre+'</option>'; }).join('');
+  document.getElementById('ep-fecha').value = p.fecha_entrega || '';
+  document.getElementById('ep-desc').value = p.notas || '';
+  document.getElementById('ep-total').value = p.total || '';
+  document.getElementById('ep-estado').value = p.estado || 'pendiente';
+  document.getElementById('ep-notas').value = '';
+  openModal('m-edit-pedido');
+}
+async function updatePedido() {
+  var id = document.getElementById('ep-id').value;
+  var r = await sb.from('pedidos').update({
+    cliente_id: document.getElementById('ep-cli').value,
+    fecha_entrega: document.getElementById('ep-fecha').value || null,
+    notas: document.getElementById('ep-desc').value,
+    total: parseFloat(document.getElementById('ep-total').value) || 0,
+    estado: document.getElementById('ep-estado').value
+  }).eq('id', id);
+  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  toast('Pedido actualizado'); closeModal('m-edit-pedido'); loadPedidos();
+}
+
+// ── EDIT COMPRAS ─────────────────────────────────────────────────
+function editCompra(c) {
+  document.getElementById('eco-id').value = c.id;
+  document.getElementById('eco-prov').value = c.proveedor_id || '';
+  document.getElementById('eco-fecha').value = c.fecha_compra || '';
+  document.getElementById('eco-desc').value = c.descripcion || '';
+  document.getElementById('eco-precio').value = c.precio_total || '';
+  document.getElementById('eco-est').value = c.estado || 'pendiente';
+  document.getElementById('eco-notas').value = c.notas || '';
+  openModal('m-edit-compra');
+}
+async function updateCompra() {
+  var id = document.getElementById('eco-id').value;
+  var r = await sb.from('compras').update({
+    descripcion: document.getElementById('eco-desc').value,
+    precio_total: parseFloat(document.getElementById('eco-precio').value) || 0,
+    fecha_compra: document.getElementById('eco-fecha').value || null,
+    estado: document.getElementById('eco-est').value,
+    notas: document.getElementById('eco-notas').value
+  }).eq('id', id);
+  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  toast('Compra actualizada'); closeModal('m-edit-compra'); loadCompras();
+}
+
+// ── EXPORTAR CSV / BACKUP ────────────────────────────────────────
+async function exportarCSV(tabla) {
+  var r = await sb.from(tabla).select('*');
+  var data = r.data || [];
+  if (!data.length) { toast('Sin datos para exportar', 'err'); return; }
+  var cols = Object.keys(data[0]);
+  var csv = cols.join(',') + '\n' + data.map(function(row) {
+    return cols.map(function(c) {
+      var v = row[c];
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'object') return '"' + JSON.stringify(v).replace(/"/g,'""') + '"';
+      return '"' + String(v).replace(/"/g,'""') + '"';
+    }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'angels_design_' + tabla + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('Exportando ' + tabla + '...');
+}
+
+async function exportarTodo() {
+  var tablas = ['clientes','pedidos','compras','filamentos','catalogo','presupuestos','calculos'];
+  var backup = {fecha: new Date().toISOString(), data: {}};
+  for (var i = 0; i < tablas.length; i++) {
+    var r = await sb.from(tablas[i]).select('*');
+    backup.data[tablas[i]] = r.data || [];
+  }
+  var blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'angels_design_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('Backup completo descargado!');
+}
+
+// ── STOCK WARNING (no bloquea) ───────────────────────────────────
+function validarStock() {
+  var filId = document.getElementById('mp-fil').value;
+  var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
+  var warn = document.getElementById('stock-warn');
+  if (!filId || !grms) { warn.style.display = 'none'; return true; }
+  var fil = Filamentos.find(function(f) { return f.id === filId; });
+  if (!fil) { warn.style.display = 'none'; return true; }
+  if (grms > (fil.gramos_disponibles || 0)) {
+    warn.style.display = 'block';
+    warn.style.background = '#fef3c7';
+    warn.style.borderColor = '#f59e0b';
+    warn.style.color = '#92400e';
+    warn.innerHTML = '<i class="ti ti-shopping-cart" style="font-size:12px;"></i> <b>Stock insuficiente</b> — Disponible: ' + (fil.gramos_disponibles||0) + 'g / Necesitas: ' + grms + 'g. <b>Recordatorio: comprar filamento antes de producir.</b>';
+    return true; // NO bloquea, solo avisa
+  }
+  warn.style.display = 'none';
+  return true;
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
+  // Check login
+  if (!sessionStorage.getItem('ad_logged')) {
+    document.getElementById('login-screen').style.display = 'flex';
+  } else {
+    document.getElementById('login-screen').style.display = 'none';
+  }
   initSb();
   if (sb) {
     await loadClientes();
