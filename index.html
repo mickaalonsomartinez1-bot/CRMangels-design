@@ -496,8 +496,8 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
       <div class="twrap">
         <table>
-          <thead><tr><th>Codigo</th><th>Nombre</th><th>Descripcion</th><th>Precio venta</th><th>Costo</th><th>Categoria</th><th></th></tr></thead>
-          <tbody id="cat-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
+          <thead><tr><th>Codigo</th><th>Nombre</th><th>Descripcion / Colores</th><th>Precio venta</th><th>Costo</th><th>Gramos</th><th>Tiempo</th><th>Categoria</th><th></th></tr></thead>
+          <tbody id="cat-body"><tr><td colspan="9"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -599,18 +599,29 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
     <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Productos del pedido</div>
+      <!-- Desde catalogo -->
       <div class="frow" style="margin-bottom:8px;">
-        <div class="fg"><label class="fl">Elegir del catalogo</label>
+        <div class="fg"><label class="fl">Del catalogo</label>
           <select class="fi" id="mp-cat-sel" onchange="elegirDeCatalogo()">
             <option value="">-- Seleccionar producto --</option>
           </select>
         </div>
         <div class="fg" style="display:flex;align-items:flex-end;">
-          <button class="btn btn-sm btn-primary" onclick="agregarItemPedido()" style="width:100%;"><i class="ti ti-plus"></i>Agregar</button>
+          <button class="btn btn-sm btn-primary" onclick="agregarItemPedido()" style="width:100%;"><i class="ti ti-plus"></i>Agregar del catalogo</button>
         </div>
       </div>
-      <div id="mp-items-list"></div>
-      <div style="font-size:11px;color:var(--acc2);margin-top:6px;">O ingresa manualmente en el campo descripcion de arriba</div>
+      <!-- Item manual -->
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
+        <div style="font-size:10px;color:var(--acc2);font-weight:600;margin-bottom:7px;text-transform:uppercase;">O agregar manualmente</div>
+        <div style="display:grid;grid-template-columns:80px 1fr 80px 90px auto;gap:6px;align-items:center;margin-bottom:6px;">
+          <input class="fi" id="mn-cod" placeholder="Cod." style="font-size:12px;">
+          <input class="fi" id="mn-desc" placeholder="Descripcion del producto" style="font-size:12px;">
+          <input type="number" class="fi" id="mn-qty" placeholder="Cant." value="1" style="font-size:12px;text-align:center;">
+          <input type="number" class="fi" id="mn-precio" placeholder="Precio $" style="font-size:12px;">
+          <button class="btn btn-sm btn-primary" onclick="agregarItemManual()" style="padding:7px 10px;"><i class="ti ti-plus"></i></button>
+        </div>
+      </div>
+      <div id="mp-items-list" style="margin-top:6px;"></div>
     </div>
     <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Consumo de filamento (descuenta stock)</div>
@@ -718,32 +729,38 @@ textarea.fi{resize:vertical;min-height:68px;}
 </div>
 
 <div class="overlay" id="m-producto">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="mh"><div class="mt">Nuevo producto / codigo</div><button class="mc" onclick="closeModal('m-producto')"><i class="ti ti-x"></i></button></div>
     <div class="frow">
       <div class="fg"><label class="fl">Codigo</label><input class="fi" id="mp2-cod" placeholder="Ej: L276, ECO-001..."></div>
       <div class="fg"><label class="fl">Categoria</label>
         <select class="fi" id="mp2-cat">
           <option value="topper">Topper</option>
-          <option value="figura">Figura</option>
-          <option value="letra">Letra</option>
+          <option value="cortante">Cortante</option>
+          <option value="llavero">Llavero</option>
+          <option value="chopp">Chopp</option>
           <option value="souvenir">Souvenir</option>
           <option value="personalizado">Personalizado</option>
           <option value="otro">Otro</option>
         </select>
       </div>
     </div>
-    <div class="fg"><label class="fl">Nombre del producto</label><input class="fi" id="mp2-nom" placeholder="Ej: Topper Messi, Letra A grande..."></div>
-    <div class="fg"><label class="fl">Descripcion</label><textarea class="fi" id="mp2-desc" rows="2" placeholder="Medidas, colores, variantes..."></textarea></div>
+    <div class="fg"><label class="fl">Nombre del producto</label><input class="fi" id="mp2-nom" placeholder="Ej: Topper Messi, Llavero corazon..."></div>
+    <div class="fg"><label class="fl">Descripcion</label><textarea class="fi" id="mp2-desc" rows="2" placeholder="Medidas, variantes, detalles..."></textarea></div>
     <div class="frow">
       <div class="fg"><label class="fl">Precio de venta ($)</label><input type="number" class="fi" id="mp2-precio" placeholder="0"></div>
       <div class="fg"><label class="fl">Costo de produccion ($)</label><input type="number" class="fi" id="mp2-costo" placeholder="0"></div>
     </div>
     <div class="frow">
-      <div class="fg"><label class="fl">Gramos de filamento</label><input type="number" class="fi" id="mp2-grm" placeholder="0"></div>
       <div class="fg"><label class="fl">Tiempo impresion (min)</label><input type="number" class="fi" id="mp2-tiempo" placeholder="0"></div>
+      <div class="fg"><label class="fl">Notas adicionales</label><input class="fi" id="mp2-notas" placeholder="Info adicional..."></div>
     </div>
-    <div class="fg"><label class="fl">Notas</label><input class="fi" id="mp2-notas" placeholder="Info adicional..."></div>
+    <!-- COLORES MULTIPLES -->
+    <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Filamentos y colores (puede ser mas de uno)</div>
+      <div id="mp2-colores-list"></div>
+      <button class="btn btn-sm" onclick="addColorProducto()" style="margin-top:8px;"><i class="ti ti-plus"></i>Agregar color</button>
+    </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('m-producto')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveProducto()"><i class="ti ti-check"></i>Guardar</button>
@@ -983,7 +1000,74 @@ function filterPed(f, btn) {
   renderPedidos(f);
 }
 
-var mpItems = [];
+var mp2Colores = [];
+
+function openModalProducto() {
+  mp2Colores = [{filamento_id:'', color:'', gramos:0}];
+  renderColoresProducto();
+  openModal('m-producto');
+}
+
+function addColorProducto() {
+  mp2Colores.push({filamento_id:'', color:'', gramos:0});
+  renderColoresProducto();
+}
+
+function renderColoresProducto() {
+  var el = document.getElementById('mp2-colores-list');
+  var filOpts = '<option value="">Sin filamento especifico</option>' + Filamentos.map(function(f) {
+    return '<option value="' + f.id + '">' + f.color + ' ' + f.material + ' (' + (f.gramos_disponibles||0) + 'g disp.)</option>';
+  }).join('');
+  el.innerHTML = mp2Colores.map(function(c, i) {
+    return '<div style="display:grid;grid-template-columns:1fr 1fr 100px 28px;gap:6px;margin-bottom:7px;align-items:center;">' +
+      '<select class="fi" style="font-size:12px;" onchange="mp2Colores['+i+'].filamento_id=this.value;mp2Colores['+i+'].color=this.options[this.selectedIndex].text.split(\'(\')[0].trim();">' + filOpts.replace('value="' + c.filamento_id + '"', 'value="' + c.filamento_id + '" selected') + '</select>' +
+      '<input class="fi" style="font-size:12px;" value="' + (c.color||'') + '" placeholder="Color (ej: Rojo, Blanco...)" oninput="mp2Colores['+i+'].color=this.value">' +
+      '<input type="number" class="fi" style="font-size:12px;text-align:center;" value="' + (c.gramos||'') + '" placeholder="Gramos" oninput="mp2Colores['+i+'].gramos=parseFloat(this.value)||0">' +
+      '<button class="btn btn-sm btn-danger" onclick="mp2Colores.splice('+i+',1);renderColoresProducto();" style="padding:5px 6px;"><i class="ti ti-x"></i></button>' +
+      '</div>';
+  }).join('');
+}
+
+function agregarItemManual() {
+  var cod = document.getElementById('mn-cod').value.trim();
+  var desc = document.getElementById('mn-desc').value.trim();
+  var qty = parseFloat(document.getElementById('mn-qty').value) || 1;
+  var precio = parseFloat(document.getElementById('mn-precio').value) || 0;
+  if (!desc) { toast('Ingresa una descripcion', 'err'); return; }
+  mpItems.push({codigo: cod, nombre: desc, qty: qty, precio: precio, gramos: 0, filamentos: [], manual: true});
+  renderMpItems();
+  recalcMpTotal();
+  document.getElementById('mn-cod').value = '';
+  document.getElementById('mn-desc').value = '';
+  document.getElementById('mn-qty').value = '1';
+  document.getElementById('mn-precio').value = '';
+}
+
+async function saveProducto() {
+  if (!sb) { toast('Sin conexion', 'err'); return; }
+  var nom = document.getElementById('mp2-nom').value.trim();
+  if (!nom) { toast('Ingresa el nombre', 'err'); return; }
+  var coloresValidos = mp2Colores.filter(function(c) { return c.color || c.filamento_id; });
+  var totalGramos = coloresValidos.reduce(function(a,c) { return a + (c.gramos||0); }, 0);
+  var r = await sb.from('catalogo').insert({
+    codigo: document.getElementById('mp2-cod').value,
+    nombre: nom,
+    descripcion: document.getElementById('mp2-desc').value,
+    categoria: document.getElementById('mp2-cat').value,
+    precio_venta: parseFloat(document.getElementById('mp2-precio').value) || 0,
+    costo: parseFloat(document.getElementById('mp2-costo').value) || 0,
+    gramos_filamento: totalGramos,
+    tiempo_impresion: parseFloat(document.getElementById('mp2-tiempo').value) || 0,
+    notas: document.getElementById('mp2-notas').value,
+    colores: coloresValidos
+  });
+  if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
+  toast('Producto guardado');
+  closeModal('m-producto');
+  mp2Colores = [{filamento_id:'', color:'', gramos:0}];
+  ['mp2-cod','mp2-nom','mp2-desc','mp2-precio','mp2-costo','mp2-tiempo','mp2-notas'].forEach(function(id) { document.getElementById(id).value = ''; });
+  await loadCatalogo();
+}
 
 function elegirDeCatalogo() {
   var sel = document.getElementById('mp-cat-sel');
@@ -991,7 +1075,7 @@ function elegirDeCatalogo() {
   if (!id) return;
   var prod = (window.Catalogo || []).find(function(p) { return p.id === id; });
   if (!prod) return;
-  mpItems.push({codigo: prod.codigo, nombre: prod.nombre, qty: 1, precio: prod.precio_venta, gramos: prod.gramos_filamento || 0});
+  mpItems.push({codigo: prod.codigo, nombre: prod.nombre, qty: 1, precio: prod.precio_venta, gramos: prod.gramos_filamento || 0, filamentos: prod.colores || [], manual: false, prod_id: prod.id});
   sel.value = '';
   renderMpItems();
   recalcMpTotal();
@@ -1063,7 +1147,24 @@ async function savePedido() {
     if (fil) {
       var nuevo = Math.max(0, (fil.gramos_disponibles || 0) - grms);
       await sb.from('filamentos').update({gramos_disponibles: nuevo}).eq('id', filId);
-      await sb.from('filamento_movimientos').insert({filamento_id: filId, tipo: 'salida', gramos: grms, motivo: 'Pedido ' + new Date().toLocaleDateString('es-AR'), pedido_id: r.data.id});
+      await sb.from('filamento_movimientos').insert({filamento_id: filId, tipo: 'salida', gramos: grms, motivo: 'Pedido manual', pedido_id: r.data.id});
+    }
+  }
+  // Descontar filamentos multi-color de cada item del catalogo
+  for (var ii = 0; ii < mpItems.length; ii++) {
+    var item = mpItems[ii];
+    if (!item.filamentos || !item.filamentos.length) continue;
+    for (var jj = 0; jj < item.filamentos.length; jj++) {
+      var fc = item.filamentos[jj];
+      if (!fc.filamento_id || !fc.gramos) continue;
+      var grmsTot = (fc.gramos || 0) * (item.qty || 1);
+      var filObj = Filamentos.find(function(f) { return f.id === fc.filamento_id; });
+      if (filObj) {
+        var nuevoG = Math.max(0, (filObj.gramos_disponibles || 0) - grmsTot);
+        await sb.from('filamentos').update({gramos_disponibles: nuevoG}).eq('id', fc.filamento_id);
+        await sb.from('filamento_movimientos').insert({filamento_id: fc.filamento_id, tipo: 'salida', gramos: grmsTot, motivo: item.nombre + ' x' + (item.qty||1), pedido_id: r.data.id});
+        filObj.gramos_disponibles = nuevoG;
+      }
     }
   }
   toast('Pedido guardado');
@@ -1095,22 +1196,25 @@ function generarFactura(p) {
   var numFact = String(facturaNumero + (p.numero || 1000));
   facturaNumero++;
 
-  // Parsear notas como items si tienen formato [COD] Nombre xCant
   var notas = p.notas || '';
   var items = [];
-  var lineas = notas.split('\n');
+  // Intentar parsear items con formato [COD] Nombre xCant
+  var lineas = notas.split(',');
   lineas.forEach(function(l) {
+    l = l.trim();
     var m = l.match(/^(?:\[([^\]]+)\]\s*)?(.+?)\s*x(\d+)$/i);
     if (m) {
-      items.push({codigo: m[1]||'-', nombre: m[2], qty: parseInt(m[3])||1, precio: 0});
+      items.push({codigo: m[1]||'-', nombre: m[2].trim(), qty: parseInt(m[3])||1, precio: 0});
     }
   });
-  // Si no hay items parseados, poner el pedido completo como una linea
   if (!items.length) {
-    items = [{codigo: '-', nombre: notas || 'Productos varios', qty: 1, precio: p.total || 0}];
+    // Si no hay formato, split por coma de la primer linea
+    var primeraLinea = notas.split('\n')[0] || notas;
+    items = [{codigo: '-', nombre: primeraLinea || 'Productos varios', qty: 1, precio: p.total || 0}];
   } else {
-    // distribuir precio proporcionalmente
-    var precioUnit = items.length > 0 ? Math.round((p.total||0) / items.reduce(function(a,it){return a+it.qty;},0)) : 0;
+    // distribuir precio proporcionalmente por unidades
+    var totalUnidades = items.reduce(function(a,it){return a+it.qty;},0);
+    var precioUnit = totalUnidades > 0 ? Math.round((p.total||0) / totalUnidades) : 0;
     items.forEach(function(it) { it.precio = precioUnit; });
   }
 
@@ -1139,7 +1243,7 @@ function generarFactura(p) {
     // HEADER
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">' +
       '<div>' +
-        '<img src="' + LOGO_IMG + '" style="height:120px;width:auto;object-fit:contain;">' +
+        '<img src="' + LOGO_IMG + '" style="height:160px;width:auto;object-fit:contain;">' +
       '</div>' +
       '<div style="text-align:right;">' +
         '<div style="display:inline-flex;border:2px solid #111;border-radius:4px;overflow:hidden;margin-bottom:10px;">' +
@@ -1659,7 +1763,7 @@ function renderPreview() {
     '<div id="print-content" style="font-family:\'DM Sans\',sans-serif;background:#fff;padding:28px;color:#111;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">' +
         '<div>' +
-          '<img src="' + LOGO_IMG + '" style="height:110px;width:auto;object-fit:contain;">' +
+          '<img src="' + LOGO_IMG + '" style="height:140px;width:auto;object-fit:contain;">' +
         '</div>' +
         '<div style="text-align:right;">' +
           '<div style="display:inline-flex;border:1.5px solid #111;border-radius:4px;overflow:hidden;margin-bottom:6px;">' +
@@ -2014,17 +2118,23 @@ async function loadCatalogo() {
   }
   var tbody = document.getElementById('cat-body');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="ti ti-tags"></i><p>Sin productos aun. Agrega tu primer codigo!</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><i class="ti ti-tags"></i><p>Sin productos. Agrega tu primer codigo!</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(function(p) {
+    var colores = p.colores || [];
+    var coloresHTML = colores.length ? colores.map(function(c) {
+      return '<span style="display:inline-block;background:var(--acl);color:var(--acc2);padding:1px 7px;border-radius:99px;font-size:10px;margin:1px;">' + c.color + (c.gramos ? ' '+c.gramos+'g' : '') + '</span>';
+    }).join('') : (p.descripcion ? '<span style="font-size:12px;color:var(--mu);">'+p.descripcion+'</span>' : '-');
     return '<tr>' +
-      '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + (p.codigo || '-') + '</span></td>' +
-      '<td style="font-weight:500;">' + (p.nombre || '-') + '</td>' +
-      '<td style="color:var(--mu);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.descripcion || '-') + '</td>' +
+      '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + (p.codigo||'-') + '</span></td>' +
+      '<td style="font-weight:500;">' + p.nombre + '</td>' +
+      '<td>' + coloresHTML + '</td>' +
       '<td><span style="font-family:var(--fh);font-weight:700;">' + money(p.precio_venta) + '</span></td>' +
       '<td style="color:var(--mu);">' + money(p.costo) + '</td>' +
-      '<td><span class="badge b-bl">' + (p.categoria || '-') + '</span></td>' +
+      '<td style="color:var(--mu);text-align:center;">' + (p.gramos_filamento||0) + 'g</td>' +
+      '<td style="color:var(--mu);text-align:center;">' + (p.tiempo_impresion ? p.tiempo_impresion+'min' : '-') + '</td>' +
+      '<td><span class="badge b-bl">' + (p.categoria||'-') + '</span></td>' +
       '<td><div class="tda"><button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
       '</tr>';
   }).join('');
