@@ -189,7 +189,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="fg" style="text-align:left;"><label class="fl">Contraseña</label><input type="password" class="fi" id="login-pass" placeholder="contraseña" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div id="login-err" style="color:var(--er);font-size:12px;margin-bottom:10px;display:none;">Usuario o contraseña incorrectos</div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
-    <div style="font-size:11px;color:var(--mu);margin-top:16px;">Usuario 1: <b>angel</b> / <b>design2024</b><br>Usuario 2: <b>admin</b> / <b>angels123</b></div>
+    <div style="font-size:11px;color:var(--mu);margin-top:16px;">Ingresa tus credenciales de acceso</div>
   </div>
 </div>
 
@@ -276,6 +276,14 @@ textarea.fi{resize:vertical;min-height:68px;}
           <div class="flex-between mb16"><div class="sec-title">Filamentos criticos</div><button class="btn btn-sm" onclick="navTo('filamentos')">Ver todos <i class="ti ti-arrow-right"></i></button></div>
           <div id="d-fil"><div class="loading"><i class="ti ti-loader"></i></div></div>
         </div>
+      </div>
+      <!-- ALERTAS DE STOCK POR PEDIDO ACTIVO -->
+      <div class="card" id="d-stock-alertas" style="display:none;border-color:#f59e0b;">
+        <div class="flex-between mb16">
+          <div class="sec-title" style="color:#92400e;"><i class="ti ti-alert-triangle" style="color:#f59e0b;"></i> Filamentos a comprar para pedidos activos</div>
+          <button class="btn btn-sm" onclick="navTo('compras')" style="background:#f59e0b;color:#fff;border-color:#f59e0b;">Registrar compra</button>
+        </div>
+        <div id="d-stock-alertas-list"></div>
       </div>
     </div>
 
@@ -1032,7 +1040,32 @@ async function loadDash() {
     alertaEl.style.display = 'none';
   }
 
-  var dp = document.getElementById('d-ped');
+  // Stock alerts para pedidos activos
+  var alertasMap = {};
+  Pedidos.filter(function(p) { return p.estado === 'pendiente' || p.estado === 'produccion'; }).forEach(function(p) {
+    // Parsear items del pedido de las notas
+    var notas = p.notas || '';
+    // buscar filamentos criticos generales
+  });
+  // Mostrar filamentos criticos con pedidos activos pendientes
+  var activosPend = Pedidos.filter(function(p) { return p.estado === 'pendiente' || p.estado === 'produccion'; }).length;
+  var criticosConPedidos = Filamentos.filter(function(f) { return (f.gramos_disponibles || 0) <= (f.gramos_minimo || 0) && activosPend > 0; });
+  var alertasEl = document.getElementById('d-stock-alertas');
+  var alertasListEl = document.getElementById('d-stock-alertas-list');
+  if (criticosConPedidos.length && activosPend > 0) {
+    alertasEl.style.display = 'block';
+    alertasListEl.innerHTML = criticosConPedidos.map(function(f) {
+      var col = (f.gramos_disponibles||0) === 0 ? 'var(--er)' : 'var(--wa)';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bor);">' +
+        '<div style="width:12px;height:12px;border-radius:50%;background:'+(f.color_hex||'#888')+';border:2px solid rgba(0,0,0,0.1);flex-shrink:0;"></div>' +
+        '<div style="flex:1;"><div style="font-weight:500;font-size:13px;">' + f.color + ' ' + f.material + '</div>' +
+        '<div style="font-size:11px;color:var(--mu);">Stock: ' + (f.gramos_disponibles||0) + 'g / Minimo: ' + (f.gramos_minimo||0) + 'g</div></div>' +
+        '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-weight:600;">COMPRAR</span>' +
+        '</div>';
+    }).join('') + '<div style="font-size:12px;color:var(--mu);margin-top:8px;">Tenes ' + activosPend + ' pedido' + (activosPend>1?'s':'') + ' activo' + (activosPend>1?'s':'') + ' con filamentos criticos.</div>';
+  } else {
+    alertasEl.style.display = 'none';
+  }
   dp.innerHTML = Pedidos.length ? Pedidos.slice(0,5).map(function(p) {
     var esHoy = p.fecha_entrega === hoyStr && p.estado !== 'entregado';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);' + (esHoy ? 'background:#fffbeb;border-radius:6px;padding:8px;' : '') + '">' +
@@ -1175,6 +1208,8 @@ function elegirDeCatalogo() {
   sel.value = '';
   renderMpItems();
   recalcMpTotal();
+  // Verificar stock de filamentos del producto
+  verificarStockItems();
 }
 
 function agregarItemPedido() { elegirDeCatalogo(); }
@@ -2425,22 +2460,53 @@ async function exportarTodo() {
 }
 
 // ── STOCK WARNING (no bloquea) ───────────────────────────────────
+function verificarStockItems() {
+  var warn = document.getElementById('stock-warn');
+  var alertas = [];
+  // Verificar filamentos de items del catalogo
+  mpItems.forEach(function(it) {
+    if (!it.manual && it.filamentos && it.filamentos.length) {
+      it.filamentos.forEach(function(fc) {
+        if (!fc.filamento_id || !fc.gramos) return;
+        var fil = Filamentos.find(function(f) { return f.id === fc.filamento_id; });
+        if (fil) {
+          var needed = (fc.gramos || 0) * (it.qty || 1);
+          if (needed > (fil.gramos_disponibles || 0)) {
+            alertas.push(fil.color + ': necesitas ' + needed + 'g, disponible ' + (fil.gramos_disponibles||0) + 'g');
+          }
+        }
+      });
+    }
+  });
+  if (alertas.length) {
+    warn.style.display = 'block';
+    warn.style.background = '#fef3c7';
+    warn.style.border = '1px solid #f59e0b';
+    warn.style.color = '#92400e';
+    warn.innerHTML = '<b>⚠️ Stock insuficiente — Recordatorio: comprar filamento</b><br>' + alertas.join('<br>');
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
 function validarStock() {
   var filId = document.getElementById('mp-fil').value;
   var grms = parseFloat(document.getElementById('mp-grm').value) || 0;
   var warn = document.getElementById('stock-warn');
-  if (!filId || !grms) { warn.style.display = 'none'; return true; }
+  // Primero verificar items del catalogo
+  verificarStockItems();
+  // Luego verificar filamento manual global
+  if (!filId || !grms) return true;
   var fil = Filamentos.find(function(f) { return f.id === filId; });
-  if (!fil) { warn.style.display = 'none'; return true; }
+  if (!fil) return true;
   if (grms > (fil.gramos_disponibles || 0)) {
     warn.style.display = 'block';
     warn.style.background = '#fef3c7';
-    warn.style.borderColor = '#f59e0b';
+    warn.style.border = '1px solid #f59e0b';
     warn.style.color = '#92400e';
-    warn.innerHTML = '<i class="ti ti-shopping-cart" style="font-size:12px;"></i> <b>Stock insuficiente</b> — Disponible: ' + (fil.gramos_disponibles||0) + 'g / Necesitas: ' + grms + 'g. <b>Recordatorio: comprar filamento antes de producir.</b>';
-    return true; // NO bloquea, solo avisa
+    warn.innerHTML = '<b>⚠️ Stock insuficiente — Recordatorio: comprar filamento</b><br>' +
+      fil.color + ': necesitas ' + grms + 'g, disponible ' + (fil.gramos_disponibles||0) + 'g';
   }
-  warn.style.display = 'none';
   return true;
 }
 
