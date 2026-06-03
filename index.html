@@ -300,7 +300,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
       <div class="twrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th>Pago</th><th></th></tr></thead>
           <tbody id="ped-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
       </div>
@@ -665,6 +665,26 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div id="stock-warn" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:12px;color:#b91c1c;margin-top:6px;"></div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="mp-notas" placeholder="Indicaciones especiales..."></textarea></div>
+    <!-- PAGO -->
+    <div style="background:var(--okb);border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--ok);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Estado de pago</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Estado de pago</label>
+          <select class="fi" id="mp-pago-est">
+            <option value="pendiente">Pendiente de pago</option>
+            <option value="sena">Seña recibida</option>
+            <option value="pagado">Pagado completo</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Monto recibido ($)</label>
+          <input type="number" class="fi" id="mp-pago-monto" placeholder="0" oninput="calcSaldo()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <span style="font-size:12px;color:var(--ok);">Saldo restante:</span>
+        <span style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--er);" id="mp-saldo">$0</span>
+      </div>
+    </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('m-pedido')">Cancelar</button>
       <button class="btn btn-primary" onclick="savePedido()"><i class="ti ti-check"></i>Guardar pedido</button>
@@ -842,6 +862,25 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="ep-notas" rows="2"></textarea></div>
+    <div style="background:var(--okb);border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--ok);margin-bottom:9px;text-transform:uppercase;font-family:var(--fh);">Estado de pago</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Estado</label>
+          <select class="fi" id="ep-pago-est">
+            <option value="pendiente">Pendiente de pago</option>
+            <option value="sena">Sena recibida</option>
+            <option value="pagado">Pagado completo</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Monto recibido ($)</label>
+          <input type="number" class="fi" id="ep-pago-monto" placeholder="0" oninput="calcSaldoEdit()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;">
+        <span style="font-size:12px;color:var(--ok);">Saldo restante:</span>
+        <span style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--er);" id="ep-saldo">$0</span>
+      </div>
+    </div>
     <div class="mf"><button class="btn" onclick="closeModal('m-edit-pedido')">Cancelar</button><button class="btn btn-primary" onclick="updatePedido()"><i class="ti ti-check"></i>Guardar</button></div>
   </div>
 </div>
@@ -1112,6 +1151,7 @@ function renderPedidos(filter) {
       '<td><span style="font-family:var(--fh);font-weight:700;color:var(--acc);">' + money(p.total) + '</span></td>' +
       '<td style="color:var(--mu);">' + fdate(p.fecha_entrega) + '</td>' +
       '<td>' + mkbadge(p.estado) + '</td>' +
+      '<td>' + mkbadgePago(p) + '</td>' +
       '<td><div class="tda">' +
         '<button class="btn btn-sm" onclick=\'editPedido(' + JSON.stringify(p) + ')\'><i class="ti ti-edit"></i></button>' +
         '<button class="btn btn-sm" onclick="avanzarPed(\'' + p.id + '\',\'' + p.estado + '\')"><i class="ti ti-arrow-right"></i></button>' +
@@ -1292,7 +1332,9 @@ async function savePedido() {
     estado: document.getElementById('mp-est').value,
     fecha_entrega: document.getElementById('mp-fecha').value || null,
     notas: notasFinal,
-    total: parseFloat(document.getElementById('mp-total').value) || 0
+    total: parseFloat(document.getElementById('mp-total').value) || 0,
+    pago_estado: document.getElementById('mp-pago-est').value,
+    pago_monto: parseFloat(document.getElementById('mp-pago-monto').value) || 0
   }).select().single();
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
   if (filId && grms > 0) {
@@ -1339,6 +1381,7 @@ async function savePedido() {
   renderMpItems();
   ['mp-cli','mp-fecha','mp-desc','mp-total','mp-notas','mp-grm'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('stock-warn').style.display = 'none';
+  if(document.getElementById('mp-pago-monto')) { document.getElementById('mp-pago-monto').value=''; document.getElementById('mp-pago-est').value='pendiente'; document.getElementById('mp-saldo').textContent='$0'; }
   await loadPedidos();
   await loadDash();
 }
@@ -1409,7 +1452,7 @@ function generarFactura(p) {
     // HEADER
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">' +
       '<div>' +
-        '<img src="' + LOGO_IMG + '" style="height:160px;width:auto;object-fit:contain;">' +
+        '<img src="' + LOGO_IMG + '" style="height:280px;width:auto;object-fit:contain;">' +
       '</div>' +
       '<div style="text-align:right;">' +
         '<div style="display:inline-flex;border:2px solid #111;border-radius:4px;overflow:hidden;margin-bottom:10px;">' +
@@ -1929,7 +1972,7 @@ function renderPreview() {
     '<div id="print-content" style="font-family:\'DM Sans\',sans-serif;background:#fff;padding:28px;color:#111;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">' +
         '<div>' +
-          '<img src="' + LOGO_IMG + '" style="height:140px;width:auto;object-fit:contain;">' +
+          '<img src="' + LOGO_IMG + '" style="height:240px;width:auto;object-fit:contain;">' +
         '</div>' +
         '<div style="text-align:right;">' +
           '<div style="display:inline-flex;border:1.5px solid #111;border-radius:4px;overflow:hidden;margin-bottom:6px;">' +
@@ -2301,7 +2344,7 @@ async function loadCatalogo() {
       '<td style="color:var(--mu);text-align:center;">' + (p.gramos_filamento||0) + 'g</td>' +
       '<td style="color:var(--mu);text-align:center;">' + (p.tiempo_impresion ? p.tiempo_impresion+'min' : '-') + '</td>' +
       '<td><span class="badge b-bl">' + (p.categoria||'-') + '</span></td>' +
-      '<td><div class="tda"><button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
+      '<td><div class="tda"><button class="btn btn-sm" onclick=\'editProducto(' + JSON.stringify(p).replace(/\'/g,"\'\'") + ')\'><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="delProducto(\'' + p.id + '\')"><i class="ti ti-trash"></i></button></div></td>' +
       '</tr>';
   }).join('');
 }
@@ -2331,6 +2374,81 @@ function saveConfig() {
   document.getElementById('cfg-st').innerHTML = '<span style="color:var(--ok);">Conectado</span>';
   toast('Conexion guardada');
   loadDash();
+}
+
+// ── PAGO PEDIDO ──────────────────────────────────────────────────
+function mkbadgePago(p) {
+  var est = p.pago_estado || 'pendiente';
+  var monto = p.pago_monto || 0;
+  var total = p.total || 0;
+  var saldo = Math.max(0, total - monto);
+  if (est === 'pagado' || saldo === 0) return '<span class="badge b-gr">Pagado</span>';
+  if (est === 'sena' && monto > 0) return '<span class="badge b-am">Sena ' + money(monto) + '</span>';
+  return '<span class="badge b-rd">Pendiente</span>';
+}
+// ── PAGO PEDIDO ──────────────────────────────────────────────────
+function calcSaldo() {
+  var total = parseFloat(document.getElementById('mp-total').value) || 0;
+  var monto = parseFloat(document.getElementById('mp-pago-monto').value) || 0;
+  var saldo = Math.max(0, total - monto);
+  document.getElementById('mp-saldo').textContent = money(saldo);
+  document.getElementById('mp-saldo').style.color = saldo === 0 ? 'var(--ok)' : 'var(--er)';
+}
+
+// ── EDIT CATALOGO ────────────────────────────────────────────────
+function editProducto(p) {
+  // Reuse same modal but pre-fill
+  mp2Colores = (p.colores && p.colores.length) ? p.colores : [{filamento_id:'', color:'', gramos:0}];
+  document.getElementById('mp2-cod').value = p.codigo || '';
+  document.getElementById('mp2-nom').value = p.nombre || '';
+  document.getElementById('mp2-desc').value = p.descripcion || '';
+  document.getElementById('mp2-cat').value = p.categoria || 'topper';
+  document.getElementById('mp2-precio').value = p.precio_venta || '';
+  document.getElementById('mp2-costo').value = p.costo || '';
+  document.getElementById('mp2-tiempo').value = p.tiempo_impresion || '';
+  document.getElementById('mp2-notas').value = p.notas || '';
+  renderColoresProducto();
+  // Change modal title and button
+  document.querySelector('#m-producto .mt').textContent = 'Editar producto';
+  // Store id for update
+  window._editProdId = p.id;
+  openModal('m-producto');
+}
+
+// Override saveProducto to handle edit mode
+var _origSaveProducto = null;
+async function saveProducto() {
+  if (!sb) { toast('Sin conexion', 'err'); return; }
+  var nom = document.getElementById('mp2-nom').value.trim();
+  if (!nom) { toast('Ingresa el nombre', 'err'); return; }
+  var coloresValidos = mp2Colores.filter(function(c) { return c.color || c.filamento_id; });
+  var totalGramos = coloresValidos.reduce(function(a,c) { return a + (c.gramos||0); }, 0);
+  var payload = {
+    codigo: document.getElementById('mp2-cod').value,
+    nombre: nom,
+    descripcion: document.getElementById('mp2-desc').value,
+    categoria: document.getElementById('mp2-cat').value,
+    precio_venta: parseFloat(document.getElementById('mp2-precio').value) || 0,
+    costo: parseFloat(document.getElementById('mp2-costo').value) || 0,
+    gramos_filamento: totalGramos,
+    tiempo_impresion: parseFloat(document.getElementById('mp2-tiempo').value) || 0,
+    notas: document.getElementById('mp2-notas').value,
+    colores: coloresValidos
+  };
+  var r;
+  if (window._editProdId) {
+    r = await sb.from('catalogo').update(payload).eq('id', window._editProdId);
+    window._editProdId = null;
+    document.querySelector('#m-producto .mt').textContent = 'Nuevo producto / codigo';
+  } else {
+    r = await sb.from('catalogo').insert(payload);
+  }
+  if (r.error) { toast('Error guardando: ' + r.error.message, 'err'); return; }
+  toast('Producto guardado');
+  closeModal('m-producto');
+  mp2Colores = [{filamento_id:'', color:'', gramos:0}];
+  ['mp2-cod','mp2-nom','mp2-desc','mp2-precio','mp2-costo','mp2-tiempo','mp2-notas'].forEach(function(id) { document.getElementById(id).value = ''; });
+  await loadCatalogo();
 }
 
 // ── LOGIN ────────────────────────────────────────────────────────
@@ -2374,6 +2492,14 @@ async function updateCliente() {
 }
 
 // ── EDIT PEDIDOS ─────────────────────────────────────────────────
+function calcSaldoEdit() {
+  var total = parseFloat(document.getElementById('ep-total').value) || 0;
+  var monto = parseFloat(document.getElementById('ep-pago-monto').value) || 0;
+  var saldo = Math.max(0, total - monto);
+  document.getElementById('ep-saldo').textContent = money(saldo);
+  document.getElementById('ep-saldo').style.color = saldo === 0 ? 'var(--ok)' : 'var(--er)';
+}
+
 function editPedido(p) {
   document.getElementById('ep-id').value = p.id;
   document.getElementById('ep-cli').innerHTML = '<option value="">Selecciona...</option>' +
@@ -2383,6 +2509,9 @@ function editPedido(p) {
   document.getElementById('ep-total').value = p.total || '';
   document.getElementById('ep-estado').value = p.estado || 'pendiente';
   document.getElementById('ep-notas').value = '';
+  document.getElementById('ep-pago-est').value = p.pago_estado || 'pendiente';
+  document.getElementById('ep-pago-monto').value = p.pago_monto || '';
+  calcSaldoEdit();
   openModal('m-edit-pedido');
 }
 async function updatePedido() {
@@ -2392,7 +2521,9 @@ async function updatePedido() {
     fecha_entrega: document.getElementById('ep-fecha').value || null,
     notas: document.getElementById('ep-desc').value,
     total: parseFloat(document.getElementById('ep-total').value) || 0,
-    estado: document.getElementById('ep-estado').value
+    estado: document.getElementById('ep-estado').value,
+    pago_estado: document.getElementById('ep-pago-est').value,
+    pago_monto: parseFloat(document.getElementById('ep-pago-monto').value) || 0
   }).eq('id', id);
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
   toast('Pedido actualizado'); closeModal('m-edit-pedido'); loadPedidos();
