@@ -851,7 +851,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
     <div class="fg"><label class="fl">Descripcion</label><input class="fi" id="ep-desc"></div>
     <div class="frow">
-      <div class="fg"><label class="fl">Total ($)</label><input type="number" class="fi" id="ep-total"></div>
+      <div class="fg"><label class="fl">Total ($)</label><input type="number" class="fi" id="ep-total" oninput="calcSaldoEdit()"></div>
       <div class="fg"><label class="fl">Estado</label>
         <select class="fi" id="ep-estado">
           <option value="pendiente">Pendiente</option>
@@ -860,6 +860,18 @@ textarea.fi{resize:vertical;min-height:68px;}
           <option value="entregado">Entregado</option>
         </select>
       </div>
+    </div>
+    <!-- ITEMS del pedido -->
+    <div style="background:var(--acl);border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;font-family:var(--fh);">Productos del pedido</div>
+      <div style="display:grid;grid-template-columns:70px 1fr 55px 100px auto;gap:6px;align-items:center;margin-bottom:7px;">
+        <input class="fi" id="ei-cod" placeholder="Cod." style="font-size:12px;">
+        <input class="fi" id="ei-desc" placeholder="Descripcion" style="font-size:12px;">
+        <input type="number" class="fi" id="ei-qty" placeholder="x" value="1" style="font-size:12px;text-align:center;">
+        <input type="number" class="fi" id="ei-precio" placeholder="Precio $" style="font-size:12px;">
+        <button class="btn btn-sm btn-primary" onclick="addEditItem()" style="padding:7px 10px;"><i class="ti ti-plus"></i></button>
+      </div>
+      <div id="ep-items-list"></div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="ep-notas" rows="2"></textarea></div>
     <div style="background:var(--okb);border-radius:var(--r);padding:13px;margin-bottom:12px;">
@@ -1333,6 +1345,7 @@ async function savePedido() {
     fecha_entrega: document.getElementById('mp-fecha').value || null,
     notas: notasFinal,
     total: parseFloat(document.getElementById('mp-total').value) || 0,
+    items_detalle: mpItems.map(function(it) { return {codigo: it.codigo||'-', nombre: it.nombre, qty: it.qty||1, precio: it.precio||0}; }),
     pago_estado: document.getElementById('mp-pago-est').value,
     pago_monto: parseFloat(document.getElementById('mp-pago-monto').value) || 0
   }).select().single();
@@ -1405,26 +1418,37 @@ function generarFactura(p) {
   var numFact = String(facturaNumero + (p.numero || 1000));
   facturaNumero++;
 
-  var notas = p.notas || '';
+  // Usar items guardados si existen, sino parsear notas
   var items = [];
-  // Intentar parsear items con formato [COD] Nombre xCant
-  var lineas = notas.split(',');
-  lineas.forEach(function(l) {
-    l = l.trim();
-    var m = l.match(/^(?:\[([^\]]+)\]\s*)?(.+?)\s*x(\d+)$/i);
-    if (m) {
-      items.push({codigo: m[1]||'-', nombre: m[2].trim(), qty: parseInt(m[3])||1, precio: 0});
-    }
-  });
-  if (!items.length) {
-    // Si no hay formato, split por coma de la primer linea
-    var primeraLinea = notas.split('\n')[0] || notas;
-    items = [{codigo: '-', nombre: primeraLinea || 'Productos varios', qty: 1, precio: p.total || 0}];
+  if (p.items_detalle && p.items_detalle.length) {
+    items = p.items_detalle;
   } else {
-    // distribuir precio proporcionalmente por unidades
-    var totalUnidades = items.reduce(function(a,it){return a+it.qty;},0);
-    var precioUnit = totalUnidades > 0 ? Math.round((p.total||0) / totalUnidades) : 0;
-    items.forEach(function(it) { it.precio = precioUnit; });
+    var notas = p.notas || '';
+    var lineas = notas.split(',');
+    lineas.forEach(function(l) {
+      l = l.trim();
+      // Formato: [COD] Nombre xCant $Precio
+      var m = l.match(/^(?:\[([^\]]+)\]\s*)?(.+?)\s*x(\d+)(?:\s*\$?([\d.]+))?$/i);
+      if (m) {
+        items.push({
+          codigo: m[1] || '-',
+          nombre: m[2].trim(),
+          qty: parseInt(m[3]) || 1,
+          precio: parseFloat(m[4]) || 0
+        });
+      }
+    });
+    if (!items.length) {
+      items = [{codigo: '-', nombre: notas || 'Productos varios', qty: 1, precio: p.total || 0}];
+    } else {
+      // Si no tienen precio individual, distribuir proporcionalmente
+      var sinPrecio = items.filter(function(it) { return !it.precio; });
+      if (sinPrecio.length === items.length) {
+        var totalUnidades = items.reduce(function(a,it){return a+it.qty;},0);
+        var precioUnit = totalUnidades > 0 ? Math.round((p.total||0) / totalUnidades) : 0;
+        items.forEach(function(it) { it.precio = precioUnit; });
+      }
+    }
   }
 
   var filas = items.map(function(it) {
@@ -2492,6 +2516,41 @@ async function updateCliente() {
 }
 
 // ── EDIT PEDIDOS ─────────────────────────────────────────────────
+var editItems = [];
+
+function addEditItem() {
+  var cod = document.getElementById('ei-cod').value.trim();
+  var desc = document.getElementById('ei-desc').value.trim();
+  var qty = parseFloat(document.getElementById('ei-qty').value) || 1;
+  var precio = parseFloat(document.getElementById('ei-precio').value) || 0;
+  if (!desc) { toast('Ingresa descripcion', 'err'); return; }
+  editItems.push({codigo: cod||'-', nombre: desc, qty: qty, precio: precio});
+  ['ei-cod','ei-desc','ei-precio'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('ei-qty').value = '1';
+  renderEditItems();
+  recalcEditTotal();
+}
+
+function renderEditItems() {
+  var el = document.getElementById('ep-items-list');
+  if (!el) return;
+  if (!editItems.length) { el.innerHTML = '<div style="font-size:12px;color:var(--mu);">Sin items. Agrega productos arriba.</div>'; return; }
+  el.innerHTML = editItems.map(function(it, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bor);">' +
+      '<span style="font-size:11px;font-weight:700;color:var(--acc2);min-width:45px;">' + (it.codigo||'-') + '</span>' +
+      '<span style="flex:1;font-size:13px;">' + it.nombre + '</span>' +
+      '<span style="font-size:12px;color:var(--mu);">x' + it.qty + '</span>' +
+      '<span style="font-family:var(--fh);font-weight:700;font-size:13px;color:var(--acc);">' + money((it.qty||1)*(it.precio||0)) + '</span>' +
+      '<button onclick="editItems.splice('+i+',1);renderEditItems();recalcEditTotal();" style="background:none;border:none;cursor:pointer;color:var(--er);font-size:15px;"><i class="ti ti-x"></i></button>' +
+      '</div>';
+  }).join('');
+}
+
+function recalcEditTotal() {
+  var total = editItems.reduce(function(a,it){return a+(it.qty||1)*(it.precio||0);},0);
+  if (total > 0) { document.getElementById('ep-total').value = total; calcSaldoEdit(); }
+}
+
 function calcSaldoEdit() {
   var total = parseFloat(document.getElementById('ep-total').value) || 0;
   var monto = parseFloat(document.getElementById('ep-pago-monto').value) || 0;
@@ -2511,19 +2570,27 @@ function editPedido(p) {
   document.getElementById('ep-notas').value = '';
   document.getElementById('ep-pago-est').value = p.pago_estado || 'pendiente';
   document.getElementById('ep-pago-monto').value = p.pago_monto || '';
+  editItems = (p.items_detalle && p.items_detalle.length) ? JSON.parse(JSON.stringify(p.items_detalle)) : [];
+  renderEditItems();
   calcSaldoEdit();
   openModal('m-edit-pedido');
 }
+
 async function updatePedido() {
   var id = document.getElementById('ep-id').value;
+  var desc = document.getElementById('ep-desc').value;
+  if (editItems.length) {
+    desc = editItems.map(function(it){ return (it.codigo&&it.codigo!=='-'?'['+it.codigo+'] ':'')+it.nombre+' x'+it.qty; }).join(', ');
+  }
   var r = await sb.from('pedidos').update({
     cliente_id: document.getElementById('ep-cli').value,
     fecha_entrega: document.getElementById('ep-fecha').value || null,
-    notas: document.getElementById('ep-desc').value,
+    notas: desc,
     total: parseFloat(document.getElementById('ep-total').value) || 0,
     estado: document.getElementById('ep-estado').value,
     pago_estado: document.getElementById('ep-pago-est').value,
-    pago_monto: parseFloat(document.getElementById('ep-pago-monto').value) || 0
+    pago_monto: parseFloat(document.getElementById('ep-pago-monto').value) || 0,
+    items_detalle: editItems.length ? editItems : null
   }).eq('id', id);
   if (r.error) { toast('Error: ' + r.error.message, 'err'); return; }
   toast('Pedido actualizado'); closeModal('m-edit-pedido'); loadPedidos();
