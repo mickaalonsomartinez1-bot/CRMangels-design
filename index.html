@@ -2601,7 +2601,22 @@ function editPedido(p) {
   document.getElementById('ep-notas').value = '';
   document.getElementById('ep-pago-est').value = p.pago_estado || 'pendiente';
   document.getElementById('ep-pago-monto').value = p.pago_monto || '';
-  editItems = (p.items_detalle && p.items_detalle.length) ? JSON.parse(JSON.stringify(p.items_detalle)).map(function(it){ if(!it.estado_item) it.estado_item='pendiente'; return it; }) : [];
+  // Cargar items: primero desde items_detalle, si no tiene, parsear desde notas
+  var itemsSrc = (p.items_detalle && p.items_detalle.length) ? p.items_detalle : null;
+  if (!itemsSrc && p.notas && p.notas.indexOf('[') !== -1) {
+    // Parsear formato "[COD] Nombre xCant" o "[COD] Nombre xCant $precio"
+    itemsSrc = p.notas.split(',').map(function(s) {
+      s = s.trim();
+      var cod = '-', nombre = s, qty = 1, precio = 0;
+      var codMatch = s.match(/^\[([^\]]+)\]\s*/);
+      if (codMatch) { cod = codMatch[1]; s = s.slice(codMatch[0].length); }
+      var qtyMatch = s.match(/\s*x(\d+\.?\d*)\s*(\$[\d,\.]+)?$/i);
+      if (qtyMatch) { qty = parseFloat(qtyMatch[1]) || 1; s = s.slice(0, s.length - qtyMatch[0].length); }
+      nombre = s.trim() || nombre;
+      return { codigo: cod, nombre: nombre, qty: qty, precio: precio, estado_item: 'pendiente' };
+    }).filter(function(it) { return it.nombre; });
+  }
+  editItems = itemsSrc ? JSON.parse(JSON.stringify(itemsSrc)).map(function(it){ if(!it.estado_item) it.estado_item='pendiente'; return it; }) : [];
   renderEditItems();
   // Auto description
   var descEl = document.getElementById('ep-desc');
