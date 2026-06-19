@@ -1529,6 +1529,10 @@ function generarFactura(p) {
         '<div style="font-size:13px;color:#3a2a1a;line-height:2;">📸 angelsdesign_cba<br>📞 +54 9 3513 18-0068</div>' +
       '</div>' +
     '</div>' +
+    '<div style="background:#111;border-radius:10px;padding:14px 24px;margin-top:14px;display:flex;justify-content:center;align-items:center;gap:12px;">' +
+      '<span style="font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;">Alias para transferencia:</span>' +
+      '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:17px;font-weight:700;color:#fff;">angel.alonso.3d</span>' +
+    '</div>' +
     '<div style="text-align:center;margin-top:14px;font-size:11px;color:#aaa;">Gracias por elegirnos!</div>' +
 
     '</div>' + // .page
@@ -1555,6 +1559,7 @@ function wspPedido(p) {
   msg += 'Te confirmamos tu pedido de *Angels Design*.\n\n';
   msg += '📋 *Detalle:*\n' + (p.notas || 'Productos varios') + '\n\n';
   msg += '💰 *Total: ' + money(p.total||0) + '*\n';
+  msg += '💳 Alias para transferir: *angel.alonso.3d*\n';
   if (p.fecha_entrega) msg += '📅 Entrega estimada: ' + fdate(p.fecha_entrega) + '\n';
   msg += '\nCualquier consulta estamos disponibles! 😊';
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
@@ -2037,6 +2042,10 @@ function renderPreview() {
         '<div style="font-size:12px;color:#3a2a1a;line-height:1.8;">✉ angelsdesign_cba@outlook.com.ar<br>📍 Panamericano, Cordoba.</div></div>' +
         '<div style="display:flex;flex-direction:column;justify-content:center;">' +
         '<div style="font-size:12px;color:#3a2a1a;line-height:1.8;">📸 angelsdesign_cba<br>📞 +54 9 3513 18-0068</div></div>' +
+      '</div>' +
+      '<div style="background:#111;border-radius:8px;padding:12px 20px;margin-top:10px;display:flex;justify-content:center;align-items:center;gap:10px;">' +
+        '<span style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;">Alias para transferencia:</span>' +
+        '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:700;color:#fff;">angel.alonso.3d</span>' +
       '</div>' +
       '<div style="text-align:center;margin-top:10px;font-size:11px;color:#aaa;">Presupuesto valido por ' + validez + ' dias desde su emision.</div>' +
     '</div>';
