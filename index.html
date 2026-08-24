@@ -296,12 +296,15 @@ textarea.fi{resize:vertical;min-height:68px;}
           <button class="btn btn-sm" onclick="filterPed('produccion',this)">Produccion</button>
           <button class="btn btn-sm" onclick="filterPed('entregado',this)">Entregados</button>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('m-pedido')"><i class="ti ti-plus"></i>Nuevo</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" id="btn-facturar-multi" style="display:none;background:#0a0a0f;border-color:#0a0a0f;" onclick="generarFacturaCombinada()"><i class="ti ti-file-invoice"></i>Facturar seleccionados (<span id="ped-sel-count">0</span>)</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('m-pedido')"><i class="ti ti-plus"></i>Nuevo</button>
+        </div>
       </div>
       <div class="twrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th>Pago</th><th></th></tr></thead>
-          <tbody id="ped-body"><tr><td colspan="7"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
+          <thead><tr><th><input type="checkbox" onclick="toggleAllPed(this.checked)"></th><th>Fecha</th><th>Cliente</th><th>Descripcion</th><th>Total</th><th>Entrega</th><th>Estado</th><th>Pago</th><th></th></tr></thead>
+          <tbody id="ped-body"><tr><td colspan="9"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1151,12 +1154,13 @@ function renderPedidos(filter) {
   var tbody = document.getElementById('ped-body');
   var hoyStr = new Date().toISOString().slice(0,10);
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><i class="ti ti-shopping-cart"></i><p>Sin pedidos</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(function(p) {
     var esHoy = p.fecha_entrega === hoyStr && p.estado !== 'entregado';
     return '<tr style="' + (esHoy ? 'background:#fffbeb;' : '') + '">' +
+      '<td><input type="checkbox" class="ped-check" data-id="' + p.id + '" onchange="toggleSelPedido()"></td>' +
       '<td style="font-size:12px;color:var(--mu);">' + new Date(p.created_at).toLocaleDateString('es-AR') + (esHoy ? ' <span style="font-size:10px;background:#f59e0b;color:#fff;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px;">HOY</span>' : '') + '</td>' +
       '<td style="font-weight:500;">' + ((p.clientes && p.clientes.nombre) || '-') + '</td>' +
       '<td style="color:var(--mu);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.notas || '-') + '</td>' +
@@ -1173,6 +1177,20 @@ function renderPedidos(filter) {
       '</div></td>' +
       '</tr>';
   }).join('');
+  toggleSelPedido();
+}
+
+var PedidosSeleccionados = [];
+function toggleSelPedido() {
+  PedidosSeleccionados = Array.prototype.slice.call(document.querySelectorAll('.ped-check:checked')).map(function(el) { return el.getAttribute('data-id'); });
+  var btn = document.getElementById('btn-facturar-multi');
+  var count = document.getElementById('ped-sel-count');
+  if (count) count.textContent = PedidosSeleccionados.length;
+  if (btn) btn.style.display = PedidosSeleccionados.length >= 2 ? 'inline-flex' : 'none';
+}
+function toggleAllPed(checked) {
+  document.querySelectorAll('.ped-check').forEach(function(el) { el.checked = checked; });
+  toggleSelPedido();
 }
 
 function filterPed(f, btn) {
@@ -1547,6 +1565,126 @@ function generarFactura(p) {
   a.click();
   setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
   toast('Factura generada!');
+}
+
+function generarFacturaCombinada() {
+  var seleccionados = Pedidos.filter(function(p) { return PedidosSeleccionados.indexOf(p.id) !== -1; });
+  if (seleccionados.length < 2) { toast('Elegi al menos 2 pedidos', 'err'); return; }
+
+  var nombresClientes = seleccionados.map(function(p) { return (p.clientes && p.clientes.nombre) || 'Cliente'; });
+  var clienteUnico = nombresClientes.every(function(n) { return n === nombresClientes[0]; });
+  var clienteTxt = clienteUnico ? nombresClientes[0] : 'Varios clientes (' + nombresClientes.filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ') + ')';
+
+  var fecha = new Date();
+  var dd = String(fecha.getDate()).padStart(2,'0');
+  var mm = String(fecha.getMonth()+1).padStart(2,'0');
+  var yy = String(fecha.getFullYear()).slice(-2);
+  var numFact = String(facturaNumero + 1000);
+  facturaNumero++;
+
+  // Combinar items de todos los pedidos seleccionados, sumando cantidades del mismo codigo
+  var combinado = {};
+  seleccionados.forEach(function(p) {
+    var items = (p.items_detalle && p.items_detalle.length) ? p.items_detalle : [{codigo:'-', nombre: p.notas || 'Productos varios', qty:1, precio: p.total || 0}];
+    items.forEach(function(it) {
+      var key = (it.codigo || '-') + '|' + it.nombre;
+      if (!combinado[key]) combinado[key] = {codigo: it.codigo || '-', nombre: it.nombre, qty: 0, precio: it.precio || 0};
+      combinado[key].qty += (it.qty || 1);
+    });
+  });
+  var itemsFinales = Object.keys(combinado).map(function(k) { return combinado[k]; });
+  var totalFinal = itemsFinales.reduce(function(a,it) { return a + (it.precio * it.qty); }, 0);
+
+  var filas = itemsFinales.map(function(it) {
+    return '<tr>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;">' + it.codigo + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:500;">' + it.nombre + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + money(it.precio) + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + it.qty + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:700;text-align:right;">' + money(it.precio * it.qty) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Factura combinada - Angels Design</title>' +
+    '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">' +
+    '<style>' +
+    '*{margin:0;padding:0;box-sizing:border-box;}' +
+    'body{font-family:"DM Sans",sans-serif;background:#fff;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    '.page{max-width:800px;margin:0 auto;padding:40px;}' +
+    '@media print{.no-print{display:none!important;}body{margin:0;}.page{padding:20px;max-width:100%;}}' +
+    '.print-btn{position:fixed;top:15px;right:15px;background:#111;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;cursor:pointer;font-family:sans-serif;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);}' +
+    '</style></head><body>' +
+    '<button class="print-btn no-print" onclick="window.print()">Guardar PDF / Imprimir</button>' +
+    '<div class="page">' +
+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">' +
+      '<div><img src="' + LOGO_IMG + '" style="height:280px;width:auto;object-fit:contain;"></div>' +
+      '<div style="text-align:right;">' +
+        '<div style="display:inline-flex;border:2px solid #111;border-radius:4px;overflow:hidden;margin-bottom:10px;">' +
+          '<div style="padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:1px;border-right:2px solid #111;">FECHA</div>' +
+          '<div style="padding:6px 12px;font-size:14px;font-weight:700;border-right:1px solid #ddd;">' + dd + '</div>' +
+          '<div style="padding:6px 12px;font-size:14px;font-weight:700;border-right:1px solid #ddd;">' + mm + '</div>' +
+          '<div style="padding:6px 12px;font-size:14px;font-weight:700;">' + yy + '</div>' +
+        '</div>' +
+        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:26px;font-weight:300;color:#111;">Factura combinada</div>' +
+        '<div style="font-size:14px;color:#b45309;font-weight:700;">N° ' + numFact + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div style="background:#f8f8f8;border-radius:10px;padding:16px 20px;margin-bottom:12px;display:flex;gap:40px;">' +
+      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:4px;">Para</div>' +
+      '<div style="font-weight:700;font-size:16px;">' + clienteTxt + '</div></div>' +
+      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:4px;">Pedidos incluidos</div>' +
+      '<div style="font-weight:600;font-size:14px;">' + seleccionados.length + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:28px;">Incluye los pedidos del ' +
+      seleccionados.map(function(p) { return new Date(p.created_at).toLocaleDateString('es-AR'); }).join(', ') + '</div>' +
+
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:28px;">' +
+      '<thead><tr style="background:#111;color:#fff;">' +
+        '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CODIGO</th>' +
+        '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRODUCTO</th>' +
+        '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRECIO UNIT.</th>' +
+        '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CANT.</th>' +
+        '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">TOTAL</th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody>' +
+    '</table>' +
+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:36px;">' +
+      '<div style="background:#f0f0f0;border-radius:10px;padding:16px 24px;min-width:260px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:18px;font-weight:700;">Total:</span>' +
+        '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;">' + money(totalFinal) + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div style="background:#c8b99a;border-radius:10px;padding:20px 28px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">' +
+      '<div>' +
+        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;color:#5a4a3a;">CONTACTO:</div>' +
+        '<div style="font-size:13px;color:#3a2a1a;line-height:2;">✉ angelsdesign_cba@outlook.com.ar<br>📍 Panamericano, Cordoba.</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;justify-content:center;">' +
+        '<div style="font-size:13px;color:#3a2a1a;line-height:2;">📸 angelsdesign_cba<br>📞 +54 9 3513 18-0068</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="background:#111;border-radius:10px;padding:14px 24px;margin-top:14px;display:flex;justify-content:center;align-items:center;gap:12px;">' +
+      '<span style="font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;">Alias para transferencia:</span>' +
+      '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:17px;font-weight:700;color:#fff;">angel.alonso.3d</span>' +
+    '</div>' +
+    '<div style="text-align:center;margin-top:14px;font-size:11px;color:#aaa;">Gracias por elegirnos!</div>' +
+
+    '</div>' +
+    '<script>window.onload=function(){setTimeout(function(){},500);};<\/script>' +
+    '</body></html>';
+
+  var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+  toast('Factura combinada generada!');
 }
 
 function wspPedido(p) {
