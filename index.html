@@ -637,20 +637,20 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div style="font-size:11px;font-weight:600;color:var(--acc2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Productos del pedido</div>
       <!-- Desde catalogo -->
       <div class="frow" style="margin-bottom:8px;">
-        <div class="fg"><label class="fl">Del catalogo</label>
-          <select class="fi" id="mp-cat-sel" onchange="elegirDeCatalogo()">
-            <option value="">-- Seleccionar producto --</option>
-          </select>
+        <div class="fg"><label class="fl">Del catalogo (buscar por codigo o nombre)</label>
+          <input class="fi" id="mp-cat-search" list="catalogo-datalist" placeholder="Escribi el codigo o nombre..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();elegirDeCatalogoBuscado();}">
+          <datalist id="catalogo-datalist"></datalist>
         </div>
         <div class="fg" style="display:flex;align-items:flex-end;">
-          <button class="btn btn-sm btn-primary" onclick="agregarItemPedido()" style="width:100%;"><i class="ti ti-plus"></i>Agregar del catalogo</button>
+          <button class="btn btn-sm btn-primary" onclick="elegirDeCatalogoBuscado()" style="width:100%;"><i class="ti ti-plus"></i>Agregar del catalogo</button>
         </div>
       </div>
       <!-- Item manual -->
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
-        <div style="font-size:10px;color:var(--acc2);font-weight:600;margin-bottom:7px;text-transform:uppercase;">O agregar manualmente</div>
+        <div style="font-size:10px;color:var(--acc2);font-weight:600;margin-bottom:7px;text-transform:uppercase;">O agregar manualmente (si el codigo existe en el catalogo, se autocompleta)</div>
         <div style="display:grid;grid-template-columns:80px 1fr 80px 90px auto;gap:6px;align-items:center;margin-bottom:6px;">
-          <input class="fi" id="mn-cod" placeholder="Cod." style="font-size:12px;">
+          <input class="fi" id="mn-cod" list="catalogo-codigos" placeholder="Cod." style="font-size:12px;" autocomplete="off" oninput="autocompletarPorCodigo()">
+          <datalist id="catalogo-codigos"></datalist>
           <input class="fi" id="mn-desc" placeholder="Descripcion del producto" style="font-size:12px;">
           <input type="number" class="fi" id="mn-qty" placeholder="Cant." value="1" style="font-size:12px;text-align:center;">
           <input type="number" class="fi" id="mn-precio" placeholder="Precio $" style="font-size:12px;">
@@ -1268,21 +1268,42 @@ async function saveProducto() {
   await loadCatalogo();
 }
 
-function elegirDeCatalogo() {
-  var sel = document.getElementById('mp-cat-sel');
-  var id = sel.value;
-  if (!id) return;
-  var prod = (window.Catalogo || []).find(function(p) { return p.id === id; });
-  if (!prod) return;
+function elegirDeCatalogoBuscado() {
+  var input = document.getElementById('mp-cat-search');
+  var val = (input.value || '').trim();
+  if (!val) { toast('Escribi un codigo o nombre para buscar', 'err'); return; }
+  var prod = (window.CatalogoPorLabel || {})[val];
+  if (!prod) {
+    // Por si escriben solo el codigo sin elegir la sugerencia del datalist
+    var valUp = val.toUpperCase();
+    prod = (window.Catalogo || []).find(function(p) { return p.codigo && p.codigo.toUpperCase() === valUp; });
+  }
+  if (!prod) {
+    // Busqueda parcial por nombre como ultimo recurso
+    var valLow = val.toLowerCase();
+    prod = (window.Catalogo || []).find(function(p) { return (p.nombre||'').toLowerCase().indexOf(valLow) !== -1; });
+  }
+  if (!prod) { toast('No se encontro ese producto en el catalogo', 'err'); return; }
   mpItems.push({codigo: prod.codigo, nombre: prod.nombre, qty: 1, precio: prod.precio_venta, gramos: prod.gramos_filamento || 0, filamentos: prod.colores || [], manual: false, prod_id: prod.id});
-  sel.value = '';
+  input.value = '';
   renderMpItems();
   recalcMpTotal();
   // Verificar stock de filamentos del producto
   verificarStockItems();
 }
 
-function agregarItemPedido() { elegirDeCatalogo(); }
+// Se llama al tipear en el campo de codigo manual: si el codigo existe en el
+// catalogo, autocompleta nombre y precio (pero se puede seguir editando).
+function autocompletarPorCodigo() {
+  var codInput = document.getElementById('mn-cod');
+  var cod = (codInput.value || '').trim().toUpperCase();
+  var prod = (window.CatalogoPorCodigo || {})[cod];
+  if (!prod) return;
+  var descEl = document.getElementById('mn-desc');
+  var precioEl = document.getElementById('mn-precio');
+  if (descEl && !descEl.value) descEl.value = prod.nombre;
+  if (precioEl && !precioEl.value) precioEl.value = prod.precio_venta || '';
+}
 
 function renderMpItems() {
   var el = document.getElementById('mp-items-list');
@@ -1470,9 +1491,14 @@ function generarFactura(p) {
   }
 
   var filas = items.map(function(it) {
+    // Buscamos la categoria: primero la que viene guardada en el item (it.categoria),
+    // y si no esta, la buscamos en el catalogo por codigo (por si es una factura vieja).
+    var catProd = (window.Catalogo || []).find(function(c) { return c.codigo && it.codigo && c.codigo.toUpperCase() === it.codigo.toUpperCase(); });
+    var categoria = it.categoria || (catProd ? catProd.categoria : '') || '-';
     return '<tr>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;">' + it.codigo + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:500;">' + it.nombre + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:12.5px;color:#555;">' + categoria + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + money(it.precio) + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + it.qty + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:700;text-align:right;">' + money(it.precio * it.qty) + '</td>' +
@@ -1522,6 +1548,7 @@ function generarFactura(p) {
       '<thead><tr style="background:#111;color:#fff;">' +
         '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CODIGO</th>' +
         '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRODUCTO</th>' +
+        '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:90px;">CATEGORIA</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRECIO UNIT.</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CANT.</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">TOTAL</th>' +
@@ -1588,7 +1615,7 @@ function generarFacturaCombinada() {
     var items = (p.items_detalle && p.items_detalle.length) ? p.items_detalle : [{codigo:'-', nombre: p.notas || 'Productos varios', qty:1, precio: p.total || 0}];
     items.forEach(function(it) {
       var key = (it.codigo || '-') + '|' + it.nombre;
-      if (!combinado[key]) combinado[key] = {codigo: it.codigo || '-', nombre: it.nombre, qty: 0, precio: it.precio || 0};
+      if (!combinado[key]) combinado[key] = {codigo: it.codigo || '-', nombre: it.nombre, categoria: it.categoria || '', qty: 0, precio: it.precio || 0};
       combinado[key].qty += (it.qty || 1);
     });
   });
@@ -1596,9 +1623,12 @@ function generarFacturaCombinada() {
   var totalFinal = itemsFinales.reduce(function(a,it) { return a + (it.precio * it.qty); }, 0);
 
   var filas = itemsFinales.map(function(it) {
+    var catProd = (window.Catalogo || []).find(function(c) { return c.codigo && it.codigo && c.codigo.toUpperCase() === it.codigo.toUpperCase(); });
+    var categoria = it.categoria || (catProd ? catProd.categoria : '') || '-';
     return '<tr>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;">' + it.codigo + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:500;">' + it.nombre + '</td>' +
+      '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:12.5px;color:#555;">' + categoria + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + money(it.precio) + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;text-align:right;">' + it.qty + '</td>' +
       '<td style="padding:12px 16px;border-bottom:1px solid #e5e5e5;font-size:14px;font-weight:700;text-align:right;">' + money(it.precio * it.qty) + '</td>' +
@@ -1640,6 +1670,7 @@ function generarFacturaCombinada() {
       '<thead><tr style="background:#111;color:#fff;">' +
         '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CODIGO</th>' +
         '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRODUCTO</th>' +
+        '<th style="padding:12px 16px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:90px;">CATEGORIA</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">PRECIO UNIT.</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;width:80px;">CANT.</th>' +
         '<th style="padding:12px 16px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">TOTAL</th>' +
@@ -2486,10 +2517,24 @@ async function loadCatalogo() {
   var list = r.data || [];
   window.Catalogo = list;
   document.getElementById('cat-cnt').textContent = list.length + ' productos en catalogo';
-  var sel = document.getElementById('mp-cat-sel');
-  if (sel) {
-    sel.innerHTML = '<option value="">-- Seleccionar producto --</option>' + list.map(function(p) {
-      return '<option value="' + p.id + '">' + (p.codigo ? '['+p.codigo+'] ' : '') + p.nombre + ' - ' + money(p.precio_venta) + '</option>';
+  // Datalist buscable (por codigo o nombre) para agregar del catalogo
+  window.CatalogoPorLabel = {};
+  function catLabel(p) { return (p.codigo ? p.codigo + ' — ' : '') + p.nombre + ' ($' + Math.round(p.precio_venta||0) + ')'; }
+  var dl = document.getElementById('catalogo-datalist');
+  if (dl) {
+    dl.innerHTML = list.map(function(p) {
+      var label = catLabel(p);
+      window.CatalogoPorLabel[label] = p;
+      return '<option value="' + label.replace(/"/g,'&quot;') + '"></option>';
+    }).join('');
+  }
+  // Datalist solo de codigos, para autocompletar el item manual
+  window.CatalogoPorCodigo = {};
+  var dlCod = document.getElementById('catalogo-codigos');
+  if (dlCod) {
+    dlCod.innerHTML = list.filter(function(p){ return p.codigo; }).map(function(p) {
+      window.CatalogoPorCodigo[p.codigo.toUpperCase()] = p;
+      return '<option value="' + p.codigo.replace(/"/g,'&quot;') + '">' + p.nombre + '</option>';
     }).join('');
   }
   var tbody = document.getElementById('cat-body');
