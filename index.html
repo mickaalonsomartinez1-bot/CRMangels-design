@@ -623,7 +623,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
     <div class="fg"><label class="fl">Descripcion del pedido</label><input class="fi" id="mp-desc" placeholder="Ej: Toppers personalizados x10"></div>
     <div class="frow">
-      <div class="fg"><label class="fl">Total ($)</label><input type="number" class="fi" id="mp-total" placeholder="0"></div>
+      <div class="fg"><label class="fl">Subtotal ($)</label><input type="number" class="fi" id="mp-total" placeholder="0" oninput="calcMpTotales()"></div>
       <div class="fg"><label class="fl">Estado</label>
         <select class="fi" id="mp-est">
           <option value="pendiente">Pendiente</option>
@@ -666,6 +666,18 @@ textarea.fi{resize:vertical;min-height:68px;}
         <div class="fg"><label class="fl">Gramos totales</label><input type="number" class="fi" id="mp-grm" placeholder="0" oninput="validarStock()"></div>
       </div>
       <div id="stock-warn" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:12px;color:#b91c1c;margin-top:6px;"></div>
+    </div>
+    <!-- DESCUENTO -->
+    <div style="background:#fef2f2;border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:#dc2626;margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px;font-family:var(--fh);">Descuento</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Descuento (%)</label><input type="number" class="fi" id="mp-desc-pct" placeholder="0" min="0" max="100" oninput="calcMpTotales()"></div>
+        <div class="fg"><label class="fl">Descuento ($)</label><div id="mp-des-monto" style="padding:9px 12px;font-family:var(--fh);font-weight:700;font-size:14px;color:#dc2626;">-$0</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;border-top:1px solid #fecaca;padding-top:8px;">
+        <span style="font-size:12px;font-weight:600;">TOTAL a cobrar:</span>
+        <span style="font-family:var(--fh);font-weight:700;font-size:17px;color:var(--acc);" id="mp-total-final">$0</span>
+      </div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="mp-notas" placeholder="Indicaciones especiales..."></textarea></div>
     <!-- PAGO -->
@@ -854,7 +866,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
     <div class="fg"><label class="fl">Descripcion</label><input class="fi" id="ep-desc" placeholder="Se genera automáticamente de los productos" readonly style="background:var(--bg);color:var(--mu);font-size:12px;cursor:default;"></div>
     <div class="frow">
-      <div class="fg"><label class="fl">Total ($)</label><input type="number" class="fi" id="ep-total" oninput="calcSaldoEdit()"></div>
+      <div class="fg"><label class="fl">Subtotal ($)</label><input type="number" class="fi" id="ep-total" oninput="calcSaldoEdit()"></div>
       <div class="fg"><label class="fl">Estado</label>
         <select class="fi" id="ep-estado">
           <option value="pendiente">Pendiente</option>
@@ -875,6 +887,17 @@ textarea.fi{resize:vertical;min-height:68px;}
         <button class="btn btn-sm btn-primary" onclick="addEditItem()" style="padding:7px 10px;"><i class="ti ti-plus"></i></button>
       </div>
       <div id="ep-items-list"></div>
+    </div>
+    <div style="background:#fef2f2;border-radius:var(--r);padding:13px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:#dc2626;margin-bottom:9px;text-transform:uppercase;font-family:var(--fh);">Descuento</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Descuento (%)</label><input type="number" class="fi" id="ep-desc-pct" placeholder="0" min="0" max="100" oninput="calcSaldoEdit()"></div>
+        <div class="fg"><label class="fl">Descuento ($)</label><div id="ep-des-monto" style="padding:9px 12px;font-family:var(--fh);font-weight:700;font-size:14px;color:#dc2626;">-$0</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;border-top:1px solid #fecaca;padding-top:8px;">
+        <span style="font-size:12px;font-weight:600;">TOTAL a cobrar:</span>
+        <span style="font-family:var(--fh);font-weight:700;font-size:17px;color:var(--acc);" id="ep-total-final">$0</span>
+      </div>
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fi" id="ep-notas" rows="2"></textarea></div>
     <div style="background:var(--okb);border-radius:var(--r);padding:13px;margin-bottom:12px;">
@@ -1000,6 +1023,8 @@ function openModal(id) {
   if (id === 'm-pedido') {
     mpItems = [];
     renderMpItems();
+    var dp = document.getElementById('mp-desc-pct'); if (dp) dp.value = '';
+    calcMpTotales();
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1344,6 +1369,19 @@ function renderMpItems() {
 function recalcMpTotal() {
   var total = mpItems.reduce(function(a, it) { return a + (it.qty||1)*(it.precio||0); }, 0);
   if (total > 0) document.getElementById('mp-total').value = total;
+  calcMpTotales();
+}
+
+// Calcula subtotal, descuento y total final del pedido nuevo
+function calcMpTotales() {
+  var sub = parseFloat(document.getElementById('mp-total').value) || 0;
+  var pct = Math.min(100, Math.max(0, parseFloat(document.getElementById('mp-desc-pct').value) || 0));
+  var des = Math.round(sub * pct) / 100;
+  var tot = sub - des;
+  document.getElementById('mp-des-monto').textContent = '-' + money(des);
+  document.getElementById('mp-total-final').textContent = money(tot);
+  calcSaldo();
+  return {sub: sub, pct: pct, des: des, tot: tot};
 }
 
 function validarStock() {
@@ -1378,12 +1416,16 @@ async function savePedido() {
   }
   // Combinar descripcion y notas
   var notasFinal = desc + (notas ? '\n' + notas : '');
+  var tt = calcMpTotales();
   var r = await sb.from('pedidos').insert({
     cliente_id: cli,
     estado: document.getElementById('mp-est').value,
     fecha_entrega: document.getElementById('mp-fecha').value || null,
     notas: notasFinal,
-    total: parseFloat(document.getElementById('mp-total').value) || 0,
+    subtotal: tt.sub,
+    descuento_pct: tt.pct,
+    descuento_monto: tt.des,
+    total: tt.tot,
     items_detalle: mpItems.map(function(it) { return {codigo: it.codigo||'-', nombre: it.nombre, qty: it.qty||1, precio: it.precio||0}; }),
     pago_estado: document.getElementById('mp-pago-est').value,
     pago_monto: parseFloat(document.getElementById('mp-pago-monto').value) || 0
@@ -1431,8 +1473,9 @@ async function savePedido() {
   closeModal('m-pedido');
   mpItems = [];
   renderMpItems();
-  ['mp-cli','mp-fecha','mp-desc','mp-total','mp-notas','mp-grm'].forEach(function(id) { document.getElementById(id).value = ''; });
+  ['mp-cli','mp-fecha','mp-desc','mp-total','mp-desc-pct','mp-notas','mp-grm'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('stock-warn').style.display = 'none';
+  calcMpTotales();
   if(document.getElementById('mp-pago-monto')) { document.getElementById('mp-pago-monto').value=''; document.getElementById('mp-pago-est').value='pendiente'; document.getElementById('mp-saldo').textContent='$0'; }
   await loadPedidos();
   await loadDash();
@@ -1478,13 +1521,13 @@ function generarFactura(p) {
       }
     });
     if (!items.length) {
-      items = [{codigo: '-', nombre: notas || 'Productos varios', qty: 1, precio: p.total || 0}];
+      items = [{codigo: '-', nombre: notas || 'Productos varios', qty: 1, precio: (p.subtotal != null ? p.subtotal : p.total) || 0}];
     } else {
       // Si no tienen precio individual, distribuir proporcionalmente
       var sinPrecio = items.filter(function(it) { return !it.precio; });
       if (sinPrecio.length === items.length) {
         var totalUnidades = items.reduce(function(a,it){return a+it.qty;},0);
-        var precioUnit = totalUnidades > 0 ? Math.round((p.total||0) / totalUnidades) : 0;
+        var precioUnit = totalUnidades > 0 ? Math.round(((p.subtotal != null ? p.subtotal : p.total)||0) / totalUnidades) : 0;
         items.forEach(function(it) { it.precio = precioUnit; });
       }
     }
@@ -1558,9 +1601,13 @@ function generarFactura(p) {
 
     // TOTAL
     '<div style="display:flex;justify-content:flex-end;margin-bottom:36px;">' +
-      '<div style="background:#f0f0f0;border-radius:10px;padding:16px 24px;min-width:260px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div style=\"min-width:260px;\">' +
+      (p.descuento_monto > 0 ? '<div style=\"display:flex;justify-content:space-between;padding:4px 24px;font-size:13px;color:#555;\"><span>Subtotal</span><span>' + money(p.subtotal||0) + '</span></div>' +
+        '<div style=\"display:flex;justify-content:space-between;padding:4px 24px 10px;font-size:13px;color:#dc2626;\"><span>Descuento (' + (p.descuento_pct||0) + '%)</span><span>-' + money(p.descuento_monto) + '</span></div>' : '') +
+      '<div style="background:#f0f0f0;border-radius:10px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">' +
         '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:18px;font-weight:700;">Total:</span>' +
         '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;">' + money(p.total||0) + '</span>' +
+      '</div>' +
       '</div>' +
     '</div>' +
 
@@ -1723,6 +1770,10 @@ function wspPedido(p) {
   var msg = 'Hola ' + cliente + '! 👋\n\n';
   msg += 'Te confirmamos tu pedido de *Angels Design*.\n\n';
   msg += '📋 *Detalle:*\n' + (p.notas || 'Productos varios') + '\n\n';
+  if (p.descuento_monto > 0) {
+    msg += 'Subtotal: ' + money(p.subtotal||0) + '\n';
+    msg += '🏷️ Descuento (' + (p.descuento_pct||0) + '%): -' + money(p.descuento_monto) + '\n';
+  }
   msg += '💰 *Total: ' + money(p.total||0) + '*\n';
   msg += '💳 Alias para transferir: *angel.alonso.3d*\n';
   if (p.fecha_entrega) msg += '📅 Entrega estimada: ' + fdate(p.fecha_entrega) + '\n';
@@ -2600,7 +2651,9 @@ function mkbadgePago(p) {
 }
 // ── PAGO PEDIDO ──────────────────────────────────────────────────
 function calcSaldo() {
-  var total = parseFloat(document.getElementById('mp-total').value) || 0;
+  var sub = parseFloat(document.getElementById('mp-total').value) || 0;
+  var pct = Math.min(100, Math.max(0, parseFloat((document.getElementById('mp-desc-pct')||{}).value) || 0));
+  var total = sub - Math.round(sub * pct) / 100;
   var monto = parseFloat(document.getElementById('mp-pago-monto').value) || 0;
   var saldo = Math.max(0, total - monto);
   document.getElementById('mp-saldo').textContent = money(saldo);
@@ -2771,8 +2824,18 @@ function recalcEditTotal() {
   }
 }
 
+function calcEpTotales() {
+  var sub = parseFloat(document.getElementById('ep-total').value) || 0;
+  var pct = Math.min(100, Math.max(0, parseFloat(document.getElementById('ep-desc-pct').value) || 0));
+  var des = Math.round(sub * pct) / 100;
+  return {sub: sub, pct: pct, des: des, tot: sub - des};
+}
+
 function calcSaldoEdit() {
-  var total = parseFloat(document.getElementById('ep-total').value) || 0;
+  var tt = calcEpTotales();
+  document.getElementById('ep-des-monto').textContent = '-' + money(tt.des);
+  document.getElementById('ep-total-final').textContent = money(tt.tot);
+  var total = tt.tot;
   var monto = parseFloat(document.getElementById('ep-pago-monto').value) || 0;
   var saldo = Math.max(0, total - monto);
   document.getElementById('ep-saldo').textContent = money(saldo);
@@ -2784,7 +2847,11 @@ function editPedido(p) {
   document.getElementById('ep-cli').innerHTML = '<option value="">Selecciona...</option>' +
     Clientes.map(function(c) { return '<option value="'+c.id+'"'+(c.id===p.cliente_id?' selected':'')+'>'+c.nombre+'</option>'; }).join('');
   document.getElementById('ep-fecha').value = p.fecha_entrega || '';
-  document.getElementById('ep-total').value = p.total || '';
+  // Pedidos viejos no tienen subtotal: se usa el total como subtotal
+  var epPct = parseFloat(p.descuento_pct) || 0;
+  var epSub = (p.subtotal != null && p.subtotal !== '') ? p.subtotal : p.total;
+  document.getElementById('ep-total').value = epSub || '';
+  document.getElementById('ep-desc-pct').value = epPct || '';
   document.getElementById('ep-estado').value = p.estado || 'pendiente';
   document.getElementById('ep-notas').value = '';
   document.getElementById('ep-pago-est').value = p.pago_estado || 'pendiente';
@@ -2823,11 +2890,15 @@ async function updatePedido() {
   if (editItems.length) {
     desc = editItems.map(function(it){ return (it.codigo&&it.codigo!=='-'?'['+it.codigo+'] ':'')+it.nombre+' x'+it.qty; }).join(', ');
   }
+  var tt = calcEpTotales();
   var r = await sb.from('pedidos').update({
     cliente_id: document.getElementById('ep-cli').value,
     fecha_entrega: document.getElementById('ep-fecha').value || null,
     notas: desc,
-    total: parseFloat(document.getElementById('ep-total').value) || 0,
+    subtotal: tt.sub,
+    descuento_pct: tt.pct,
+    descuento_monto: tt.des,
+    total: tt.tot,
     estado: document.getElementById('ep-estado').value,
     pago_estado: document.getElementById('ep-pago-est').value,
     pago_monto: parseFloat(document.getElementById('ep-pago-monto').value) || 0,
