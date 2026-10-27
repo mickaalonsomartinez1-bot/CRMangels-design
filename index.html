@@ -215,7 +215,6 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="ns">Inventario</div>
     <div class="ni" data-page="filamentos"><i class="ti ti-line-dashed"></i>Filamentos</div>
     <div class="ni" data-page="catalogo"><i class="ti ti-tags"></i>Catalogo</div>
-    <div class="ni" data-page="galeria"><i class="ti ti-photo"></i>Galeria</div>
     <div class="ns">Sistema</div>
     <div class="ni" data-page="reportes"><i class="ti ti-chart-bar"></i>Reportes</div>
     <div class="ni" data-page="config"><i class="ti ti-settings"></i>Config</div>
@@ -523,23 +522,6 @@ textarea.fi{resize:vertical;min-height:68px;}
           <thead><tr><th>Codigo</th><th>Nombre</th><th>Descripcion / Colores</th><th>Precio venta</th><th>Costo</th><th>Gramos</th><th>Tiempo</th><th>Categoria</th><th></th></tr></thead>
           <tbody id="cat-body"><tr><td colspan="9"><div class="loading"><i class="ti ti-loader"></i></div></td></tr></tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- GALERIA -->
-    <div class="page" id="page-galeria">
-      <div class="flex-between mb16">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div class="srch" style="width:220px;"><i class="ti ti-search"></i><input type="text" placeholder="Buscar imagen..." oninput="buscarGaleria(this.value)"></div>
-          <div id="gal-cnt" style="font-size:12px;color:var(--mu);"></div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('gal-file').click()"><i class="ti ti-upload"></i>Subir imagen</button>
-        <input type="file" id="gal-file" accept="image/*" multiple style="display:none" onchange="subirGal(this)">
-      </div>
-      <div class="galgrid" id="gal-grid"><div class="loading"><i class="ti ti-loader"></i></div></div>
-      <div class="upzone" onclick="document.getElementById('gal-file').click()">
-        <i class="ti ti-cloud-upload"></i>
-        <p style="font-size:13px;color:var(--mu);">Arrastra imagenes aqui o <span style="color:var(--acc);font-weight:500;">haz clic para buscar</span></p>
       </div>
     </div>
 
@@ -997,7 +979,6 @@ var pageMeta = {
   compras: ['Compras', 'Compras a proveedores'],
   filamentos: ['Filamentos', 'Stock de materia prima'],
   catalogo: ['Catalogo de productos', 'Codigos y precios de tus productos'],
-  galeria: ['Galeria', 'Imagenes de productos'],
   reportes: ['Reportes', 'Analisis del negocio'],
   config: ['Configuracion', 'Conexion y ajustes']
 };
@@ -1041,7 +1022,6 @@ async function loadPage(id) {
   else if (id === 'compras') await loadCompras();
   else if (id === 'filamentos') await loadFilamentos();
   else if (id === 'catalogo') await loadCatalogo();
-  else if (id === 'galeria') await loadGaleria();
   else if (id === 'reportes') await loadReportes();
   else if (id === 'calculadora') loadCalcHist();
   else if (id === 'config') loadConfig();
@@ -2380,122 +2360,6 @@ function enviarWspConPDF() {
   msg += 'Para ver el PDF completo pedinos por este medio.\n';
   msg += 'Cualquier consulta estamos disponibles!';
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
-}
-
-async function loadGaleria() {
-  var r = await sb.from('galeria').select('*').order('nombre', {ascending: true});
-  var el = document.getElementById('gal-grid');
-  if (!r.data || !r.data.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1;"><i class="ti ti-photo"></i><p>Sin imagenes. Subi tu primera imagen!</p></div>'; return; }
-  window.GaleriaData = r.data;
-  var cnt = document.getElementById('gal-cnt');
-  if (cnt) cnt.textContent = r.data.length + ' imagenes';
-  renderGaleria(r.data);
-}
-
-function renderGaleria(list) {
-  var el = document.getElementById('gal-grid');
-  if (!list.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1;"><i class="ti ti-search"></i><p>Sin resultados</p></div>'; return; }
-  el.innerHTML = list.map(function(g) {
-    var url = g.imagen_url || '';
-    var imgHtml = url
-      ? '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
-        '<span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:34px;background:var(--acl);">📦</span>'
-      : '<span style="font-size:34px;">📦</span>';
-    return '<div class="galcard" style="position:relative;">' +
-      '<div class="galthumb" onclick="verImagen(\'' + url + '\',\'' + g.nombre.replace(/'/g,"\\'") + '\')">' + imgHtml + '</div>' +
-      '<div class="galinfo">' +
-        '<div class="galname" title="' + g.nombre + '">' + g.nombre + '</div>' +
-        '<div class="galcat">' + (g.categoria || 'modelo') + '</div>' +
-        '<div style="display:flex;gap:5px;margin-top:7px;">' +
-          (url ? '<button class="btn btn-sm" style="flex:1;font-size:11px;padding:4px 6px;" onclick="descargarImagen(\'' + url + '\',\'' + g.nombre.replace(/'/g,"\\'") + '\')"><i class="ti ti-download"></i> Descargar</button>' : '') +
-          '<button class="btn btn-sm btn-danger" style="padding:4px 8px;" onclick="delGaleria(\'' + g.id + '\')"><i class="ti ti-trash"></i></button>' +
-        '</div>' +
-      '</div>' +
-      '</div>';
-  }).join('');
-}
-
-function buscarGaleria(q) {
-  var data = window.GaleriaData || [];
-  var cnt = document.getElementById('gal-cnt');
-  if (!q) {
-    renderGaleria(data);
-    if (cnt) cnt.textContent = data.length + ' imagenes';
-    return;
-  }
-  var filtrado = data.filter(function(g) {
-    return g.nombre.toLowerCase().includes(q.toLowerCase()) || (g.categoria||'').toLowerCase().includes(q.toLowerCase());
-  });
-  renderGaleria(filtrado);
-  if (cnt) cnt.textContent = filtrado.length + ' resultados';
-}
-
-function verImagen(url, nombre) {
-  if (!url) return;
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;';
-  overlay.innerHTML = '<img src="' + url + '" style="max-width:90vw;max-height:80vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.5);">' +
-    '<div style="color:#fff;font-size:15px;font-weight:500;margin-top:16px;">' + nombre + '</div>' +
-    '<div style="display:flex;gap:12px;margin-top:16px;">' +
-      '<button onclick="descargarImagen(\'' + url + '\',\'' + nombre + '\');event.stopPropagation();" style="background:#1a6ef5;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ti ti-download"></i> Descargar</button>' +
-      '<button onclick="this.closest(\'div[style*=fixed]\').remove();" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;">Cerrar</button>' +
-    '</div>';
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-}
-
-function descargarImagen(url, nombre) {
-  if (!url) { toast('Sin imagen para descargar', 'err'); return; }
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = nombre + '.jpg';
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  toast('Descargando ' + nombre);
-}
-
-async function delGaleria(id) {
-  if (!confirm('Eliminar esta imagen?')) return;
-  await sb.from('galeria').delete().eq('id', id);
-  toast('Imagen eliminada');
-  loadGaleria();
-}
-
-async function subirGal(input) {
-  var files = Array.from(input.files);
-  if (!files.length) return;
-  toast('Procesando imagenes...');
-  var ok = 0;
-  for (var i = 0; i < files.length; i++) {
-    var file = files[i];
-    var base64 = await new Promise(function(resolve) {
-      var canvas = document.createElement('canvas');
-      var ctx = canvas.getContext('2d');
-      var img = new Image();
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        img.onload = function() {
-          var maxW = 800, maxH = 800;
-          var w = img.width, h = img.height;
-          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-          if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
-          canvas.width = w; canvas.height = h;
-          ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.75));
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-    var nombre = file.name.replace(/\.[^/.]+$/, '');
-    var r = await sb.from('galeria').insert({nombre: nombre, imagen_url: base64, categoria: 'modelo'});
-    if (!r.error) ok++;
-  }
-  toast('Listo! ' + ok + ' imagen' + (ok > 1 ? 'es subidas' : ' subida'));
-  input.value = '';
-  loadGaleria();
 }
 
 function setRepPeriodo(p, btn) {
